@@ -95,8 +95,13 @@ if DATABASE_URL:
     try:
         import dj_database_url
         DATABASES = {
-            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+            'default': dj_database_url.parse(
+                DATABASE_URL,
+                conn_max_age=0,
+                ssl_require=True
+            )
         }
+        DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
     except Exception:
         import urllib.parse as urlparse
         url = urlparse.urlparse(DATABASE_URL)
@@ -111,6 +116,8 @@ if DATABASE_URL:
                 'OPTIONS': {
                     'sslmode': 'require',
                 },
+                'CONN_MAX_AGE': 0,
+                'DISABLE_SERVER_SIDE_CURSORS': True,
             }
         }
 elif os.environ.get('DB_HOST') and os.environ.get('DB_HOST') != 'localhost':
