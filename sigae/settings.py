@@ -95,7 +95,7 @@ if DATABASE_URL:
     try:
         import dj_database_url
         DATABASES = {
-            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
         }
     except Exception:
         import urllib.parse as urlparse
@@ -108,6 +108,9 @@ if DATABASE_URL:
                 'PASSWORD': url.password or '',
                 'HOST': url.hostname,
                 'PORT': str(url.port or 5432),
+                'OPTIONS': {
+                    'sslmode': 'require',
+                },
             }
         }
 elif os.environ.get('DB_HOST') and os.environ.get('DB_HOST') != 'localhost':
@@ -119,6 +122,9 @@ elif os.environ.get('DB_HOST') and os.environ.get('DB_HOST') != 'localhost':
             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': os.environ.get('DB_HOST'),
             'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
         }
     }
 else:
@@ -181,6 +187,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+WHITENOISE_USE_FINDERS = True
 
 # Tipo por defecto para llaves primarias auto-incrementables
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
