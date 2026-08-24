@@ -1,0 +1,35 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+var/
+
+# Entornos virtuales
+.venv/
+venv/
+ENV/
+env/
+
+# Entorno y Secretos
+.env
+.env.local
+.env.*.local
+
+# IDEs y Editores
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Sistema operativo
+Thumbs.db
+Desktop.ini
+.DS_Store

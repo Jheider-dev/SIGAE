@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Plana Docente - SIGAE{% endblock %}
+{% block nav_docentes %}active{% endblock %}
+{% block header_title %}Plana Docente de la Academia{% endblock %}
+{% block header_subtitle %}Gestión de profesores, cursos asignados, tarifas por hora y estado de actividad{% endblock %}
+
+{% block content %}
+<div class="card">
+    <!-- Encabezado con Botón de Registro -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="color: #0f172a; margin: 0; font-size: 1.05rem; font-weight: 700;">Profesores Registrados</h3>
+            <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.8125rem;">Total registrados: <strong>{{ total_docentes }}</strong></p>
+        </div>
+        <a href="{% url 'registrar_docente' %}" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Registrar Nuevo Docente
+        </a>
+    </div>
+
+    <!-- Barra de Búsqueda y Filtros -->
+    <form method="GET" action="{% url 'listar_docentes' %}" style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; background: #f8fafc; padding: 0.875rem; border-radius: var(--border-radius-sm); border: 1px solid var(--border-color);">
+        <div style="flex: 1; min-width: 220px;">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Buscar por Nombre, DNI, Usuario o Curso...">
+        </div>
+
+        <div style="min-width: 150px;">
+            <select name="estado" class="form-control">
+                <option value="">Todos los Estados</option>
+                <option value="activo" {% if estado_filtro == 'activo' %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if estado_filtro == 'inactivo' %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary">
+                Filtrar
+            </button>
+            {% if query or estado_filtro %}
+            <a href="{% url 'listar_docentes' %}" class="btn btn-secondary">
+                Limpiar
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Tabla de Plana Docente -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Docente</th>
+                    <th>DNI</th>
+                    <th>Curso Asignado</th>
+                    <th>Tarifa / Hora</th>
+                    <th>Teléfono</th>
+                    <th>Estado</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in docentes %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600; color: var(--primary-color);">{{ doc.nombres_completos }}</div>
+                        <small style="color: var(--text-muted); font-family: monospace;">{{ doc.username }}</small>
+                    </td>
+                    <td><span style="font-family: monospace; font-weight: 500;">{{ doc.dni }}</span></td>
+                    <td>
+                        <span class="badge badge-primary">
+                            {{ doc.curso_asignado }}
+                        </span>
+                    </td>
+                    <td>
+                        <strong style="color: var(--success-color);">S/. {{ doc.precio_hora|floatformat:2 }} / hr</strong>
+                    </td>
+                    <td>{{ doc.telefono|default:"-" }}</td>
+                    <td>
+                        {% if doc.is_active %}
+                            <span class="badge badge-success">Activo</span>
+                        {% else %}
+                            <span class="badge badge-danger">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
+                            <a href="{% url 'editar_docente' doc.id %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                                Editar
+                            </a>
+                            <form method="POST" action="{% url 'cambiar_estado_docente' doc.id %}" style="margin: 0; display: inline;" onsubmit="return confirm('¿Estás seguro de cambiar el estado de este docente?');">
+                                {% csrf_token %}
+                                {% if doc.is_active %}
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                                        Desactivar
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                                        Activar
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No se encontraron profesores registrados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

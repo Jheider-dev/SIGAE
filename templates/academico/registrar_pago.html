@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Pago / Cobro - SIGAE{% endblock %}
+{% block nav_pagos %}active{% endblock %}
+{% block header_title %}Registro de Pago y Cobranza{% endblock %}
+{% block header_subtitle %}Registra un abono por concepto de matrícula, pensión o servicios a un estudiante{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 750px; margin: 0 auto;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Ficha de Cobro
+    </h3>
+
+    <form method="POST" action="{% if alumno_seleccionado %}{% url 'registrar_pago_alumno' alumno_seleccionado.id %}{% else %}{% url 'registrar_pago' %}{% endif %}" id="form-registro-pago">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="form-label">Estudiante / Postulante *</label>
+            {% if alumno_seleccionado %}
+                <input type="hidden" name="alumno_id" value="{{ alumno_seleccionado.id }}">
+                <div style="background: rgba(30, 58, 138, 0.05); border: 1px solid var(--border-color); border-left: 4px solid var(--primary-color); border-radius: var(--border-radius); padding: 0.75rem 1rem;">
+                    <div style="font-weight: 700; color: var(--primary-color);">{{ alumno_seleccionado.get_full_name }}</div>
+                    <div style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.15rem;">
+                        DNI: <strong style="font-family: monospace;">{{ alumno_seleccionado.dni|default:'-' }}</strong> | Área: <strong>{{ alumno_seleccionado.get_area_academica_display }}</strong>
+                    </div>
+                </div>
+            {% else %}
+                <input type="hidden" name="alumno_id" id="selected_alumno_id" required>
+                
+                <!-- Buscador de Estudiante con Autocompletado en Tiempo Real -->
+                <div id="student-search-container" style="position: relative;">
+                    <div style="position: relative;">
+                        <input type="text" 
+                               id="student-search-input" 
+                               class="form-control" 
+                               placeholder="Escribe DNI, nombres o apellidos para buscar..." 
+                               autocomplete="off" 
+                               style="background-color: #ffffff; padding-right: 2.25rem;">
+                        <span id="search-clear-btn" style="display: none; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; font-size: 0.9rem; font-weight: 700;">✕</span>
+                    </div>
+
+                    <!-- Lista Desplegable Flotante de Resultados -->
+                    <div id="student-dropdown-list" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; max-height: 250px; overflow-y: auto; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-lg); z-index: 1050;">
+                        {% for al in alumnos %}
+                            <div class="student-select-item" 
+                                 data-id="{{ al.id }}" 
+                                 data-name="{{ al.get_full_name|default:al.username }}" 
+                                 data-dni="{{ al.dni|default:'' }}" 
+                                 data-area="{{ al.get_area_academica_display|default:'General' }}"
+                                 data-search="{{ al.get_full_name|lower }} {{ al.dni }} {{ al.username|lower }}"
+                                 style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid rgba(226, 232, 240, 0.6); transition: background 0.15s ease;">
+                                <div style="font-weight: 600; color: var(--primary-color); font-size: 0.9375rem;">{{ al.get_full_name|default:al.username }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 0.75rem; margin-top: 0.2rem;">
+                                    <span>DNI: <strong style="font-family: monospace; color: var(--text-color);">{{ al.dni|default:'-' }}</strong></span>
+                                    <span>Área: <strong>{{ al.get_area_academica_display|default:'General' }}</strong></span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <div id="no-students-message" style="display: none; padding: 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
+                            No se encontraron estudiantes que coincidan con la búsqueda.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta del Alumno Seleccionado -->
+                <div id="selected-student-display" style="display: none; background: rgba(30, 58, 138, 0.05); border: 1px solid var(--border-color); border-left: 4px solid var(--success-color); border-radius: var(--border-radius); padding: 0.75rem 1rem; align-items: center; justify-content: space-between; margin-top: 0.25rem;">
+                    <div>
+                        <div id="display-student-name" style="font-weight: 700; color: var(--primary-color); font-size: 0.95rem;"></div>
+                        <div id="display-student-details" style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.15rem;"></div>
+                    </div>
+                    <button type="button" id="btn-change-selected-student" class="btn btn-secondary" style="padding: 0.3rem 0.75rem; font-size: 0.75rem;">
+                        Cambiar
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="concepto" class="form-label">Concepto de Cobro *</label>
+                <select name="concepto" id="concepto" class="form-control" style="background-color: #ffffff;" required>
+                    {% for c_code, c_label in conceptos_choices %}
+                        <option value="{{ c_code }}">{{ c_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="monto" class="form-label">Monto a Cobrar (S/.) *</label>
+                <input type="number" name="monto" id="monto" class="form-control" step="0.50" min="1" placeholder="Ej. 150.00" required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="ciclo_id" class="form-label">Ciclo Académico Correspondiente</label>
+                <select name="ciclo_id" id="ciclo_id" class="form-control" style="background-color: #ffffff;">
+                    <option value="">-- Ciclo Actual del Alumno --</option>
+                    {% for c in ciclos %}
+                        <option value="{{ c.id }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fecha_pago" class="form-label">Fecha de Pago *</label>
+                <input type="date" name="fecha_pago" id="fecha_pago" class="form-control" value="{{ hoy_str }}" required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3">
+            <div class="form-group">
+                <label for="metodo_pago" class="form-label">Método de Pago *</label>
+                <select name="metodo_pago" id="metodo_pago" class="form-control" style="background-color: #ffffff;" required>
+                    {% for m_code, m_label in metodos_choices %}
+                        <option value="{{ m_code }}">{{ m_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="numero_operacion" class="form-label">Nro de Comprobante / Operación</label>
+                <input type="text" name="numero_operacion" id="numero_operacion" class="form-control" placeholder="Ej: OP-98124, Recibo 001">
+            </div>
+
+            <div class="form-group">
+                <label for="estado" class="form-label">Estado del Pago *</label>
+                <select name="estado" id="estado" class="form-control" style="background-color: #ffffff;" required>
+                    {% for e_code, e_label in estados_choices %}
+                        <option value="{{ e_code }}" {% if e_code == 'PAGADO' %}selected{% endif %}>{{ e_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="observaciones" class="form-label">Observaciones o Notas</label>
+            <textarea name="observaciones" id="observaciones" class="form-control" rows="2" placeholder="Ej. Pago con descuento especial o cancelado en secretaría"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+            {% if alumno_seleccionado %}
+                <a href="{% url 'historial_pagos_alumno' alumno_seleccionado.id %}" class="btn btn-secondary">Cancelar</a>
+            {% else %}
+                <a href="{% url 'control_pagos' %}" class="btn btn-secondary">Cancelar</a>
+            {% endif %}
+            <button type="submit" class="btn btn-primary" style="padding-left: 2rem; padding-right: 2rem;">
+                Registrar Pago
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Lógica del Buscador Interactivo de Alumnos -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.getElementById("student-search-input");
+    const dropdownList = document.getElementById("student-dropdown-list");
+    const searchClearBtn = document.getElementById("search-clear-btn");
+    const searchContainer = document.getElementById("student-search-container");
+    const hiddenAlumnoId = document.getElementById("selected_alumno_id");
+    const selectedDisplay = document.getElementById("selected-student-display");
+    const displayName = document.getElementById("display-student-name");
+    const displayDetails = document.getElementById("display-student-details");
+    const btnChange = document.getElementById("btn-change-selected-student");
+    const noStudentsMsg = document.getElementById("no-students-message");
+    const form = document.getElementById("form-registro-pago");
+
+    if (!searchInput) return;
+
+    const items = Array.from(document.querySelectorAll(".student-select-item"));
+
+    // Filtrado en vivo al tipear
+    function filterStudents() {
+        const query = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        if (query.length > 0) {
+            searchClearBtn.style.display = "block";
+        } else {
+            searchClearBtn.style.display = "none";
+        }
+
+        items.forEach(item => {
+            const searchData = item.getAttribute("data-search");
+            if (!query || searchData.includes(query)) {
+                item.style.display = "block";
+                visibleCount++;
+            } else {
+                item.style.display = "none";
+            }
+        });
+
+        if (visibleCount === 0) {
+            noStudentsMsg.style.display = "block";
+        } else {
+            noStudentsMsg.style.display = "none";
+        }
+
+        dropdownList.style.display = "block";
+    }
+
+    searchInput.addEventListener("input", filterStudents);
+
+    searchInput.addEventListener("focus", function() {
+        dropdownList.style.display = "block";
+        filterStudents();
+    });
+
+    // Limpiar búsqueda
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener("click", function() {
+            searchInput.value = "";
+            searchClearBtn.style.display = "none";
+            filterStudents();
+            searchInput.focus();
+        });
+    }
+
+    // Efecto Hover y Selección de un Alumno
+    items.forEach(item => {
+        item.addEventListener("mouseenter", function() {
+            this.style.backgroundColor = "rgba(30, 58, 138, 0.08)";
+        });
+        item.addEventListener("mouseleave", function() {
+            this.style.backgroundColor = "#ffffff";
+        });
+
+        item.addEventListener("click", function() {
+            const id = this.getAttribute("data-id");
+            const name = this.getAttribute("data-name");
+            const dni = this.getAttribute("data-dni");
+            const area = this.getAttribute("data-area");
+
+            hiddenAlumnoId.value = id;
+            displayName.innerText = name;
+            displayDetails.innerHTML = `DNI: <strong style="font-family: monospace; color: var(--text-color);">${dni || '-'}</strong> | Área: <strong>${area}</strong>`;
+
+            searchContainer.style.display = "none";
+            dropdownList.style.display = "none";
+            selectedDisplay.style.display = "flex";
+        });
+    });
+
+    // Botón Cambiar Alumno
+    if (btnChange) {
+        btnChange.addEventListener("click", function() {
+            hiddenAlumnoId.value = "";
+            selectedDisplay.style.display = "none";
+            searchContainer.style.display = "block";
+            searchInput.value = "";
+            searchClearBtn.style.display = "none";
+            searchInput.focus();
+            filterStudents();
+        });
+    }
+
+    // Cerrar el dropdown al hacer clic fuera
+    document.addEventListener("click", function(e) {
+        if (!searchContainer.contains(e.target)) {
+            dropdownList.style.display = "none";
+        }
+    });
+
+    // Validación antes de enviar
+    if (form) {
+        form.addEventListener("submit", function(e) {
+            if (hiddenAlumnoId && !hiddenAlumnoId.value) {
+                e.preventDefault();
+                searchInput.focus();
+                alert("Por favor selecciona un estudiante del listado para registrar el cobro.");
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

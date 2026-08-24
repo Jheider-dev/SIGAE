@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Docente - SIGAE{% endblock %}
+{% block nav_registrar_docente %}active{% endblock %}
+{% block header_title %}Registro de Nuevo Docente{% endblock %}
+{% block header_subtitle %}Formulario administrativo para el alta de docentes, curso, tarifa y generación de cuenta{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Ficha de Registro Docente
+    </h3>
+    
+    <form method="POST" action="{% url 'registrar_docente' %}">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="nombres" class="form-label">Nombres *</label>
+                <input type="text" name="nombres" id="nombres" class="form-control" placeholder="Ej. Carlos Alberto" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="apellidos" class="form-label">Apellidos *</label>
+                <input type="text" name="apellidos" id="apellidos" class="form-control" placeholder="Ej. Mamani Flores" required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="dni" class="form-label">DNI *</label>
+                <input type="text" name="dni" id="dni" class="form-control" placeholder="8 dígitos" pattern="[0-9]{8}" maxlength="8" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="telefono" class="form-label">Teléfono / Celular</label>
+                <input type="text" name="telefono" id="telefono" class="form-control" placeholder="Ej. 951456789">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3">
+            <div class="form-group">
+                <label for="curso_asignado" class="form-label">Curso Asignado *</label>
+                <input type="text" name="curso_asignado" id="curso_asignado" class="form-control" placeholder="Ej. Álgebra, Física" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="precio_hora" class="form-label">Precio por Hora (S/.) *</label>
+                <input type="number" name="precio_hora" id="precio_hora" class="form-control" step="0.50" min="0" placeholder="Ej. 35.00" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ciclo" class="form-label">Ciclo Académico *</label>
+                <select name="ciclo" id="ciclo" class="form-control" style="height: 42px; background-color: #ffffff;" required>
+                    <option value="">-- Seleccionar --</option>
+                    {% for c in ciclos %}
+                        <option value="{{ c.id }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="email" class="form-label">Correo Electrónico</label>
+            <input type="email" name="email" id="email" class="form-control" placeholder="ejemplo@correo.com">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 2rem;">
+            <label for="direccion" class="form-label">Dirección Domiciliaria</label>
+            <input type="text" name="direccion" id="direccion" class="form-control" placeholder="Ej. Jr. Tarapacá 450, Puno">
+        </div>
+
+        <div style="background: rgba(217, 119, 6, 0.05); padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 2rem;">
+            <strong style="color: var(--secondary-color); display: block; margin-bottom: 0.25rem;">Reglas de Credenciales Docentes:</strong>
+            <ul style="color: var(--text-muted); font-size: 0.875rem; padding-left: 1.25rem;">
+                <li>El nombre de usuario se generará en MAYÚSCULAS tomando el primer nombre y las iniciales de sus apellidos (Ej: CARLOSMF).</li>
+                <li>En caso de homonimia en el sistema, se añade un sufijo numérico incremental (Ej: CARLOSMF1).</li>
+                <li>La contraseña inicial temporal del docente será su DNI.</li>
+            </ul>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <a href="{% url 'listar_docentes' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary" style="padding-left: 2rem; padding-right: 2rem;">
+                Registrar Docente
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

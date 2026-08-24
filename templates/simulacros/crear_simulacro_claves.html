@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Cargar Simulacro - SIGAE{% endblock %}
+{% block nav_simulacros_doc %}active{% endblock %}
+{% block header_title %}Cargar Nuevo Simulacro{% endblock %}
+{% block header_subtitle %}Banco de claves y preguntas desde archivo plano (TXT/CSV){% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 750px; margin: 0 auto;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Formulario de Carga de Simulacro
+    </h3>
+    
+    <form method="POST" enctype="multipart/form-data" action="{% url 'crear_simulacro_claves' %}">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="titulo" class="form-label">Título del Simulacro *</label>
+            <input type="text" name="titulo" id="titulo" class="form-control" placeholder="Ej. Simulacro de {{ user.curso_asignado|default:'Admisión General' }}" required>
+        </div>
+
+        <div class="grid grid-cols-3">
+            <div class="form-group">
+                <label for="fecha" class="form-label">Fecha de Evaluación *</label>
+                <input type="date" name="fecha" id="fecha" class="form-control" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="area_academica" class="form-label">Área Académica *</label>
+                <select name="area_academica" id="area_academica" class="form-control" style="height: 42px; background-color: #ffffff; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem 1rem;" required>
+                    <option value="INGENIERIAS" {% if user.area_academica == 'INGENIERIAS' %}selected{% endif %}>Ingenierías</option>
+                    <option value="BIOMEDICAS" {% if user.area_academica == 'BIOMEDICAS' %}selected{% endif %}>Biomédicas</option>
+                    <option value="SOCIALES" {% if user.area_academica == 'SOCIALES' %}selected{% endif %}>Sociales</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="puntaje_maximo" class="form-label">Puntaje Máximo *</label>
+                <input type="number" name="puntaje_maximo" id="puntaje_maximo" class="form-control" value="400" min="0" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="descripcion" class="form-label">Descripción o Instrucciones</label>
+            <textarea name="descripcion" id="descripcion" class="form-control" rows="3" placeholder="Ej. Examen de preguntas de opción múltiple para {{ user.curso_asignado|default:'el curso' }}. Tiempo de duración: 2 horas."></textarea>
+        </div>
+
+        <h4 style="color: var(--primary-color); margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+            Configuración de Ponderaciones (Puntaje Libre)
+        </h4>
+
+        <div class="grid grid-cols-3">
+            <div class="form-group">
+                <label for="puntaje_correcta" class="form-label">Respuesta Correcta *</label>
+                <input type="number" name="puntaje_correcta" id="puntaje_correcta" class="form-control" step="0.01" value="4.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="puntaje_incorrecta" class="form-label">Respuesta Incorrecta *</label>
+                <input type="number" name="puntaje_incorrecta" id="puntaje_incorrecta" class="form-control" step="0.01" value="0.00" required>
+                <small style="color: var(--text-muted); font-size: 0.75rem;">(Por defecto 0.00 sin penalización)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="puntaje_omitida" class="form-label">Omitida *</label>
+                <input type="number" name="puntaje_omitida" id="puntaje_omitida" class="form-control" step="0.01" value="0.00" required>
+            </div>
+        </div>
+
+        <h4 style="color: var(--primary-color); margin-top: 2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.25rem;">
+            Archivo de Preguntas y Claves
+        </h4>
+
+        <!-- Bloque de Descarga de Plantilla CSV -->
+        <div style="background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.2); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <strong style="color: var(--secondary-color); font-size: 0.95rem; display: block;">Plantilla Preconfigurada de Preguntas</strong>
+                <span style="font-size: 0.8125rem; color: var(--text-muted);">Descarga el archivo modelo con la estructura exacta de 8 columnas requerida por el procesador automático.</span>
+            </div>
+            <a href="{% url 'descargar_plantilla_simulacro' %}" class="btn btn-secondary" style="font-size: 0.8125rem;">
+                Descargar Plantilla (.CSV)
+            </a>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="archivo" class="form-label">Cargar Archivo de Preguntas (TXT/CSV) *</label>
+            <input type="file" name="archivo" id="archivo" class="form-control" accept=".txt,.csv" style="padding-top: 8px;" required>
+            <small style="color: var(--text-muted); display: block; margin-top: 0.5rem; line-height: 1.4;">
+                El archivo debe estar delimitado por comas (<code>,</code>) o punto y coma (<code>;</code>) y contener 8 columnas:<br>
+                <code>NroPregunta; Enunciado; AlternativaA; AlternativaB; AlternativaC; AlternativaD; AlternativaE; AlternativaCorrecta</code>
+            </small>
+        </div>
+
+        <div style="background: rgba(30, 58, 138, 0.04); padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 2rem;">
+            <strong style="color: var(--primary-color); display: block; margin-bottom: 0.25rem;">Ejemplo de Estructura de Fila:</strong>
+            <code style="font-size: 0.8125rem; word-break: break-all; display: block; color: var(--text-color);">
+                1; ¿Cuál es la capital del Perú?; Lima; Arequipa; Cusco; Tacna; Puno; A
+            </code>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <a href="{% url 'dashboard_docente' %}" class="btn" style="background: #e2e8f0; color: var(--text-color);">Cancelar</a>
+            <button type="submit" class="btn btn-primary" style="padding-left: 2rem; padding-right: 2rem;">
+                Procesar y Cargar Simulacro
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

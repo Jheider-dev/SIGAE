@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil - SIGAE{% endblock %}
+{% block nav_perfil %}active{% endblock %}
+{% block header_title %}Mi Perfil y Credencial QR{% endblock %}
+{% block header_subtitle %}Consulta tu información personal y presenta tu credencial de acceso para control de asistencia{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-2">
+    <!-- Detalles de Datos Personales -->
+    <div class="card">
+        <h3 style="color: var(--primary-color); margin-bottom: 1.25rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.4rem; font-size: 1.15rem;">
+            {% if user.rol == 'DOCENTE' %}Datos del Docente{% else %}Datos del Estudiante{% endif %}
+        </h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+                <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Nombre Completo</span>
+                <span style="font-size: 1.1rem; color: var(--text-color); font-weight: 700;">{{ user.get_full_name|default:user.username }}</span>
+            </div>
+            
+            <div class="grid grid-cols-2" style="margin-bottom: 0; gap: 0.75rem;">
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Usuario</span>
+                    <span style="font-size: 0.95rem; color: var(--text-color); font-family: monospace;">{{ user.username }}</span>
+                </div>
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">DNI</span>
+                    <span style="font-size: 0.95rem; color: var(--text-color); font-family: monospace; font-weight: 600;">{{ user.dni|default:"No registrado" }}</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2" style="margin-bottom: 0; gap: 0.75rem;">
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Teléfono</span>
+                    <span style="font-size: 0.95rem; color: var(--text-color);">{{ user.telefono|default:"No registrado" }}</span>
+                </div>
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Rol en el Sistema</span>
+                    <span class="badge badge-success" style="margin-top: 0.25rem;">{{ user.get_rol_display }}</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2" style="margin-bottom: 0; gap: 0.75rem;">
+                {% if user.rol == 'ALUMNO' %}
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Área Académica</span>
+                    <span style="font-size: 0.95rem; color: var(--text-color); font-weight: 600;">{{ user.get_area_academica_display|default:"No asignada" }}</span>
+                </div>
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Ciclo Académico</span>
+                    <span style="font-size: 0.95rem; color: var(--text-color);">{{ ciclo_nombre }}</span>
+                </div>
+                {% elif user.rol == 'DOCENTE' %}
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Curso Asignado</span>
+                    <span style="font-size: 0.95rem; color: var(--text-color); font-weight: 600;">{{ user.curso_asignado|default:"No asignado" }}</span>
+                </div>
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Ciclo Académico</span>
+                    <span style="font-size: 0.95rem; color: var(--text-color);">{{ ciclo_nombre }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            {% if user.rol == 'DOCENTE' %}
+            <div style="margin-top: 0.25rem; background: rgba(30, 58, 138, 0.04); padding: 0.65rem 0.85rem; border-radius: var(--border-radius-sm); border: 1px solid var(--border-color);">
+                <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.75rem; text-transform: uppercase;">Tarifa de Dictado</span>
+                <span style="font-size: 1.1rem; font-weight: 700; color: var(--success-color);">S/. {{ user.precio_hora|default:"0.00" }} / hora</span>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-2" style="margin-bottom: 0; gap: 0.75rem;">
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Correo Electrónico</span>
+                    <span style="font-size: 0.9rem; color: var(--text-color); word-break: break-all;">{{ user.email|default:"No registrado" }}</span>
+                </div>
+                <div>
+                    <span style="font-weight: 600; color: var(--primary-color); display: block; font-size: 0.8125rem; text-transform: uppercase;">Dirección</span>
+                    <span style="font-size: 0.9rem; color: var(--text-color);">{{ user.direccion|default:"No registrada" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credencial Código QR Dinámica (Mobile-First Centered) -->
+    <div class="card" style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+        <div style="width: 100%;">
+            <h3 style="color: var(--primary-color); margin-bottom: 0.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.4rem; font-size: 1.15rem;">
+                Credencial Digital QR
+            </h3>
+            
+            <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1rem; max-width: 320px; margin-left: auto; margin-right: auto;">
+                Presenta este código en la entrada. Se actualiza automáticamente para garantizar la seguridad de tu registro.
+            </p>
+        </div>
+
+        <!-- Contenedor QR Centrado y Nítido -->
+        <div style="background: #ffffff; padding: 1rem; border-radius: var(--border-radius); box-shadow: var(--shadow); border: 2px solid rgba(30, 58, 138, 0.15); margin-bottom: 1rem; display: inline-flex; align-items: center; justify-content: center;">
+            <div id="qrcode"></div>
+        </div>
+
+        <!-- Información Limpia del Titular y Contador de Expiración -->
+        <div style="width: 100%; max-width: 320px; background: rgba(30, 58, 138, 0.04); border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); padding: 0.75rem 1rem;">
+            <div style="font-weight: 700; color: var(--primary-color); font-size: 0.95rem; margin-bottom: 0.25rem;">
+                {% if user.rol == 'DOCENTE' %}
+                    Prof. {{ user.get_full_name|default:user.username }} — {{ user.curso_asignado|default:"Docente" }}
+                {% else %}
+                    {{ user.get_full_name|default:user.username }} — {{ user.get_area_academica_display|default:"Alumno" }}
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.35rem;">
+                <span class="badge badge-warning" id="countdown-badge" style="font-size: 0.75rem; padding: 0.25rem 0.65rem; font-weight: 600;">
+                    Se actualiza en: <span id="countdown-timer">15</span>s
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts CDN para generación de Código QR local y animación de temporizador -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const qrcodeContainer = document.getElementById("qrcode");
+        const countdownTimer = document.getElementById("countdown-timer");
+        const countdownBadge = document.getElementById("countdown-badge");
+        let qrcode = null;
+        let timeLeft = 15;
+        let timerInterval = null;
+
+        function startCountdown(duration) {
+            timeLeft = duration;
+            if (countdownTimer) countdownTimer.innerText = timeLeft;
+            if (countdownBadge) {
+                countdownBadge.className = "badge badge-success";
+            }
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (countdownTimer) countdownTimer.innerText = Math.max(0, timeLeft);
+                
+                if (timeLeft <= 4 && countdownBadge) {
+                    countdownBadge.className = "badge badge-danger";
+                } else if (timeLeft <= 8 && countdownBadge) {
+                    countdownBadge.className = "badge badge-warning";
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
+
+        function refreshQR() {
+            fetch("{% url 'api_generar_qr' %}")
+                .then(response => {
+                    if (!response.ok) throw new Error("Error al obtener token dinámico.");
+                    return response.json();
+                })
+                .then(data => {
+                    const token = data.token_qr;
+                    const expiresIn = data.expires_in || 15;
+                    const qrSize = Math.min(220, Math.max(160, Math.floor(window.innerWidth * 0.55)));
+                    
+                    if (qrcode === null) {
+                        qrcode = new QRCode(qrcodeContainer, {
+                            text: token,
+                            width: qrSize,
+                            height: qrSize,
+                            colorDark : "#1e3a8a",
+                            colorLight : "#ffffff",
+                            correctLevel : QRCode.CorrectLevel.H
+                        });
+                    } else {
+                        qrcode.clear();
+                        qrcode.makeCode(token);
+                    }
+
+                    startCountdown(expiresIn);
+                })
+                .catch(err => {
+                    console.error("Error al refrescar el QR:", err);
+                    if (countdownTimer) countdownTimer.innerText = "--";
+                });
+        }
+
+        refreshQR();
+        setInterval(refreshQR, 12000);
+    });
+</script>
+{% endblock %}

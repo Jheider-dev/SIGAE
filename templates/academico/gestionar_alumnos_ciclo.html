@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Matrícula de Alumnos - {{ ciclo.nombre }} - SIGAE{% endblock %}
+{% block nav_ciclos %}active{% endblock %}
+{% block header_title %}Matrícula y Aulas del Ciclo{% endblock %}
+{% block header_subtitle %}Gestiona qué alumnos pertenecen al ciclo {{ ciclo.nombre }}{% endblock %}
+
+{% block content %}
+<!-- Resumen del Ciclo -->
+<div class="card" style="margin-bottom: 2rem; border-left: 5px solid var(--primary-color);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="color: var(--primary-color); margin-bottom: 0.5rem;">{{ ciclo.nombre }}</h3>
+            <span style="color: var(--text-muted); font-size: 0.8125rem;">
+                Periodo: {{ ciclo.fecha_inicio|date:"d/m/Y" }} al {{ ciclo.fecha_fin|date:"d/m/Y" }}
+            </span>
+        </div>
+        <div>
+            <span class="badge badge-success" style="font-size: 0.9rem; padding: 0.4rem 1rem;">
+                {{ matriculas.count }} Alumnos Matriculados
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-2" style="align-items: flex-start; gap: 2rem;">
+    <!-- Lista de Alumnos en el Ciclo -->
+    <div class="card">
+        <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+            Alumnos Matriculados
+        </h3>
+        
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Área</th>
+                        <th style="text-align: right;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mat in matriculas %}
+                    <tr>
+                        <td style="font-family: monospace; font-size: 0.8125rem;">{{ mat.codigo_matricula }}</td>
+                        <td style="font-weight: 600; color: var(--primary-color);">{{ mat.alumno.get_full_name }}</td>
+                        <td>
+                            <span class="badge" style="background: rgba(30, 58, 138, 0.05); color: var(--text-color);">
+                                {{ mat.alumno.get_area_academica_display|default:"Ninguna" }}
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <form method="POST" style="margin: 0; display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="alumno_id" value="{{ mat.alumno.id }}">
+                                <input type="hidden" name="accion" value="eliminar">
+                                <button type="submit" class="btn" style="background: rgba(220, 38, 38, 0.1); color: var(--danger-color); padding: 0.25rem 0.75rem; font-size: 0.75rem;">
+                                    Retirar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                            No hay alumnos matriculados en este ciclo.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lista de Alumnos Disponibles -->
+    <div class="card">
+        <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+            Alumnos Disponibles para Matrícula
+        </h3>
+        
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Área Académica</th>
+                        <th style="text-align: right;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alumno in alumnos_disponibles %}
+                    <tr>
+                        <td style="font-weight: 600; color: var(--text-color);">{{ alumno.get_full_name }}</td>
+                        <td>
+                            <span class="badge" style="background: rgba(30, 58, 138, 0.05); color: var(--text-color);">
+                                {{ alumno.get_area_academica_display|default:"Ninguna" }}
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <form method="POST" style="margin: 0; display: inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="alumno_id" value="{{ alumno.id }}">
+                                <input type="hidden" name="accion" value="agregar">
+                                <button type="submit" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">
+                                    Matricular
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                            Todos los alumnos registrados ya se encuentran matriculados en este ciclo.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+    <a href="{% url 'listar_ciclos' %}" class="btn" style="background: #e2e8f0; color: var(--text-color);">Volver a Ciclos</a>
+</div>
+{% endblock %}

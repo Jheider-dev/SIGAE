@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Padrón de Alumnos - SIGAE{% endblock %}
+{% block nav_alumnos_admin %}active{% endblock %}
+{% block nav_alumnos %}active{% endblock %}
+{% block header_title %}Padrón General de Alumnos{% endblock %}
+{% block header_subtitle %}Listado, búsqueda, estado de pensiones y administración de estudiantes matriculados{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <!-- Barra de Filtros y Búsqueda -->
+    <form method="GET" action="{% url 'listar_alumnos' %}" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label for="q" class="form-label">Buscar por DNI, Nombres o Usuario:</label>
+            <input type="text" name="q" id="q" value="{{ query }}" class="form-control" placeholder="Ej: 71234567, Jaime, Perez...">
+        </div>
+
+        <div style="flex: 1; min-width: 160px;">
+            <label for="area" class="form-label">Área Académica:</label>
+            <select name="area" id="area" class="form-control">
+                <option value="">Todas las Áreas</option>
+                {% for code, name in areas_choices %}
+                    <option value="{{ code }}" {% if area_filtro == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 140px;">
+            <label for="estado" class="form-label">Estado:</label>
+            <select name="estado" id="estado" class="form-control">
+                <option value="">Todos los Estados</option>
+                <option value="activo" {% if estado_filtro == 'activo' %}selected{% endif %}>Activos</option>
+                <option value="inactivo" {% if estado_filtro == 'inactivo' %}selected{% endif %}>Inactivos</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary">
+                Filtrar
+            </button>
+            {% if query or area_filtro or estado_filtro %}
+                <a href="{% url 'listar_alumnos' %}" class="btn btn-secondary">
+                    Limpiar
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="color: var(--primary-color); margin: 0; font-size: 1.15rem; font-weight: 700;">Lista de Estudiantes</h3>
+            <span style="color: var(--text-muted); font-size: 0.8125rem;">
+                Total encontrados: <strong>{{ total_alumnos }}</strong> alumno{{ total_alumnos|pluralize }}
+            </span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{% url 'exportar_alumnos_csv' %}" class="btn btn-secondary" style="font-size: 0.8125rem;">
+                Exportar Padrón CSV
+            </a>
+            <a href="{% url 'registrar_alumno' %}" class="btn btn-primary" style="font-size: 0.8125rem;">
+                Registrar Nuevo Alumno
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>DNI</th>
+                    <th>Apellidos y Nombres</th>
+                    <th>Usuario</th>
+                    <th>Área Académica</th>
+                    <th>Ciclo Actual</th>
+                    <th>Pensión / Pagos</th>
+                    <th>Estado</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alumno in alumnos %}
+                <tr>
+                    <td style="font-family: monospace; font-weight: 600; color: var(--primary-color);">{{ alumno.dni }}</td>
+                    <td style="font-weight: 600;">{{ alumno.nombres_completos }}</td>
+                    <td style="font-family: monospace; font-size: 0.8125rem; color: var(--text-muted);">{{ alumno.username }}</td>
+                    <td>
+                        <span class="badge" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color);">
+                            {{ alumno.area_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.8125rem; color: var(--text-color);">
+                            {{ alumno.ciclo_actual }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {{ alumno.estado_pago_badge }}">
+                            {{ alumno.estado_pago }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if alumno.is_active %}
+                            <span class="badge badge-success">Activo</span>
+                        {% else %}
+                            <span class="badge badge-danger">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap;">
+                            <a href="{% url 'historial_pagos_alumno' alumno.id %}" class="btn" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color); padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="Gestionar pagos del alumno">
+                                Pagos
+                            </a>
+                            <a href="{% url 'editar_alumno' alumno.id %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="Editar datos del alumno">
+                                Editar
+                            </a>
+                            <form method="POST" action="{% url 'cambiar_estado_alumno' alumno.id %}" style="margin: 0; display: inline;">
+                                {% csrf_token %}
+                                {% if alumno.is_active %}
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" onclick="return confirm('¿Desactivar al alumno {{ alumno.nombres_completos }}?')" title="Desactivar alumno">
+                                        Desactivar
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="Activar alumno">
+                                        Activar
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No se encontraron alumnos con los criterios de búsqueda especificados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

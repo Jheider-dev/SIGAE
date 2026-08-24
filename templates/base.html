@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SIGAE - Academia Euler{% endblock %}</title>
+    <!-- Hoja de Estilos Personalizada -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2.2">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% block body_wrapper %}
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <span class="logo-text">SIGAE</span>
+                <span class="logo-subtext">Academia Euler</span>
+            </div>
+            
+            <nav style="flex-grow: 1;">
+                <ul class="nav-links">
+                    {% if user.is_authenticated %}
+                        <!-- Enlaces por Rol -->
+                        {% if user.rol == 'ADMIN' or user.is_superuser or user.is_staff %}
+                            <li>
+                                <a href="{% url 'dashboard_admin' %}" class="nav-link {% block nav_dashboard_admin %}{% endblock %}">Dashboard</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'listar_ciclos' %}" class="nav-link {% block nav_ciclos_admin %}{% endblock %}">Gestión de Ciclos</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'listar_alumnos' %}" class="nav-link {% block nav_alumnos_admin %}{% endblock %}">Padrón de Alumnos</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'control_pagos' %}" class="nav-link {% block nav_pagos %}{% endblock %}">Control de Pagos</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'listar_docentes' %}" class="nav-link {% block nav_docentes %}{% endblock %}">Plana Docente</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'ver_liquidacion_docentes' %}" class="nav-link {% block nav_liquidacion %}{% endblock %}">Liquidación Docente</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'listar_simulacros_admin' %}" class="nav-link {% block nav_simulacros_admin %}{% endblock %}">Banco de Simulacros</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'control_asistencia' %}" class="nav-link {% block nav_asistencia_admin %}{% endblock %}">Registro de Asistencias</a>
+                            </li>
+                        {% elif user.rol == 'ALUMNO' %}
+                            <li>
+                                <a href="{% url 'dashboard_alumno' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">Dashboard</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'listar_simulacros' %}" class="nav-link {% block nav_simulacros %}{% endblock %}">Simulacros Activos</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'perfil_alumno' %}" class="nav-link {% block nav_perfil %}{% endblock %}">Mi Credencial QR</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'control_asistencia' %}" class="nav-link {% block nav_asistencia %}{% endblock %}">Mi Historial de Asistencia</a>
+                            </li>
+                        {% elif user.rol == 'DOCENTE' %}
+                            <li>
+                                <a href="{% url 'dashboard_docente' %}" class="nav-link {% block nav_dashboard_doc %}{% endblock %}">Dashboard</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'perfil_alumno' %}" class="nav-link {% block nav_perfil_doc %}{% endblock %}">Mi Credencial QR</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'mis_asistencias_docente' %}" class="nav-link {% block nav_asistencias_doc %}{% endblock %}">Mis Asistencias y Horas</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'crear_simulacro_claves' %}" class="nav-link {% block nav_simulacros_doc %}{% endblock %}">Cargar Simulacro</a>
+                            </li>
+                        {% elif user.rol == 'SECRETARIA' %}
+                            <li>
+                                <a href="{% url 'dashboard_secretaria' %}" class="nav-link {% block nav_dashboard_sec %}{% endblock %}">Dashboard</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'listar_ciclos' %}" class="nav-link {% block nav_ciclos %}{% endblock %}">Gestión Ciclos</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'listar_alumnos' %}" class="nav-link {% block nav_alumnos %}{% endblock %}">Padrón de Alumnos</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'control_pagos' %}" class="nav-link {% block nav_pagos_sec %}{% endblock %}">Control de Pagos</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'registrar_alumno' %}" class="nav-link {% block nav_registrar_alumno %}{% endblock %}">Registrar Alumno</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'control_asistencia' %}" class="nav-link {% block nav_asistencia_sec %}{% endblock %}">Panel Asistencia QR</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                    {% block custom_nav %}{% endblock %}
+                </ul>
+            </nav>
+            
+            <!-- User Info Section -->
+            {% if user.is_authenticated %}
+            <div class="user-section">
+                <div class="user-info">
+                    <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="user-role">{{ user.get_rol_display|default:user.rol }}</div>
+                </div>
+                <a href="{% url 'cerrar_sesion' %}" class="logout-btn">
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
+            {% endif %}
+        </aside>
+
+        <!-- Main Content Wrapper -->
+        <main class="main-content">
+            <header class="header">
+                <h1 class="header-title">{% block header_title %}SIGAE{% endblock %}</h1>
+                <p class="header-subtitle">{% block header_subtitle %}Sistema Integral de Gestión Académica y Evaluación{% endblock %}</p>
+            </header>
+            
+            <!-- Contenedor de Contenido Específico -->
+            <section class="content-body">
+                {% if messages %}
+                    <div class="messages-container" style="margin-bottom: 1.5rem;">
+                        {% for message in messages %}
+                            <div class="badge badge-{{ message.tags|default:'warning' }}" style="display: block; padding: 0.75rem 1rem; border-radius: var(--border-radius); font-size: 0.875rem; margin-bottom: 0.5rem; text-transform: none;">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </section>
+        </main>
+    </div>
+    {% endblock %}
+</body>
+</html>

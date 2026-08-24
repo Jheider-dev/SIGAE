@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Ciclo - {{ ciclo.nombre }} - SIGAE{% endblock %}
+{% block nav_ciclos %}active{% endblock %}
+{% block header_title %}Editar Ciclo Académico{% endblock %}
+{% block header_subtitle %}Actualiza el nombre, periodo de duración, descripción y estado del ciclo{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+        <h3 style="color: var(--primary-color); margin: 0;">{{ ciclo.nombre }}</h3>
+        <div>
+            {% if ciclo.activo %}
+                <span class="badge badge-success">Activo</span>
+            {% else %}
+                <span class="badge badge-danger">Finalizado</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="POST" action="{% url 'editar_ciclo' ciclo.id %}">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="nombre" class="form-label">Nombre del Ciclo *</label>
+                <input type="text" name="nombre" id="nombre" class="form-control" value="{{ ciclo.nombre }}" required>
+            </div>
+            <div class="form-group">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <input type="text" name="descripcion" id="descripcion" class="form-control" value="{{ ciclo.descripcion|default:'' }}" placeholder="Ej. Dirigido a postulantes de todas las áreas">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="fecha_inicio" class="form-label">Fecha de Inicio *</label>
+                <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control" value="{{ ciclo.fecha_inicio|date:'Y-m-d' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="fecha_fin" class="form-label">Fecha de Fin *</label>
+                <input type="date" name="fecha_fin" id="fecha_fin" class="form-control" value="{{ ciclo.fecha_fin|date:'Y-m-d' }}" required>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 2rem; background: #f8fafc; padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+            <label class="form-label" style="font-weight: 600; color: var(--text-color); margin-bottom: 0.5rem; display: block;">
+                Estado del Periodo Académico
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; user-select: none;">
+                <input type="checkbox" name="activo" value="1" {% if ciclo.activo %}checked{% endif %} style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary-color);">
+                <span style="font-size: 0.95rem; font-weight: 500;">
+                    Ciclo Activo (disponible para dictado, matrículas y asignaciones)
+                </span>
+            </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <a href="{% url 'listar_ciclos' %}" class="btn" style="background: #e2e8f0; color: var(--text-color);">Cancelar</a>
+            <button type="submit" class="btn btn-primary" style="padding-left: 2rem; padding-right: 2rem;">
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

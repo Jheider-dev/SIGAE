@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel del Docente - SIGAE{% endblock %}
+{% block nav_dashboard_doc %}active{% endblock %}
+{% block header_title %}Panel Académico - Profesor {{ user.get_full_name|default:user.username }}{% endblock %}
+{% block header_subtitle %}Gestión de dictado, asistencias y banco de simulacros{% endblock %}
+
+{% block content %}
+<!-- Tarjetas de Resumen Métrico -->
+<div class="grid grid-cols-3" style="margin-bottom: 2rem;">
+    <!-- Métrica de Horas Dictadas Acumuladas -->
+    <div class="card" style="border-left: 5px solid var(--secondary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Horas Dictadas ({{ mes_actual_nombre }} {{ anio_actual }})
+            </span>
+            <div style="font-size: 2.25rem; font-weight: 700; color: var(--primary-color); line-height: 1.1;">
+                {{ total_horas|floatformat:1 }} <span style="font-size: 1.125rem; font-weight: 500; color: var(--secondary-color);">hrs</span>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Basado en escaneos QR confirmados
+        </div>
+    </div>
+
+    <!-- Métrica de Sesiones / Asistencias -->
+    <div class="card" style="border-left: 5px solid var(--primary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Clases Registradas
+            </span>
+            <div style="font-size: 2.25rem; font-weight: 700; color: var(--primary-color); line-height: 1.1;">
+                {{ total_sesiones }} <span style="font-size: 1.125rem; font-weight: 500; color: var(--text-muted);">sesion{{ total_sesiones|pluralize:"es" }}</span>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Asistencia mensual confirmada
+        </div>
+    </div>
+
+    <!-- Métrica de Curso Asignado y Tarifa -->
+    <div class="card" style="border-left: 5px solid var(--success-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Curso y Tarifa
+            </span>
+            <div style="font-size: 1.35rem; font-weight: 700; color: var(--text-color); margin-bottom: 0.25rem;">
+                {{ user.curso_asignado|default:"Docente General" }}
+            </div>
+        </div>
+        <div style="margin-top: 0.75rem; font-size: 0.875rem; color: var(--text-muted);">
+            Tarifa: <strong style="color: var(--success-color);">S/. {{ user.precio_hora|default:"0.00" }} / hr</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Acceso Rápido al Banco de Preguntas -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="color: var(--primary-color); margin: 0;">Banco de Preguntas y Simulacros</h3>
+            <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.875rem;">Crea nuevas evaluaciones para tus alumnos mediante carga masiva CSV.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{% url 'descargar_plantilla_simulacro' %}" class="btn" style="background: rgba(217, 119, 6, 0.1); color: var(--secondary-color);">
+                Descargar Plantilla CSV
+            </a>
+            <a href="{% url 'crear_simulacro_claves' %}" class="btn btn-primary">
+                Cargar Nuevo Simulacro
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Simulacros Asociados al Docente -->
+<div class="card">
+    <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Mis Simulacros y Reporte de Notas de Alumnos
+    </h3>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Simulacro</th>
+                    <th>Fecha de Evaluación</th>
+                    <th>Área Académica</th>
+                    <th>Puntaje Máximo</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sim in simulacros %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--primary-color);">{{ sim.titulo }}</td>
+                    <td>{{ sim.fecha|date:"d/m/Y" }}</td>
+                    <td>
+                        <span class="badge" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color); font-size: 0.75rem;">
+                            {{ sim.get_area_academica_display }}
+                        </span>
+                    </td>
+                    <td>{{ sim.puntaje_maximo }} pts</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.4rem; justify-content: flex-end;">
+                            <a href="{% url 'ver_reporte_notas' sim.id %}" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8125rem;">
+                                Reporte
+                            </a>
+                            <a href="{% url 'ver_ranking_html' sim.id %}" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8125rem;">
+                                Ranking
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No tienes simulacros creados o asignados a tus cursos actualmente.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

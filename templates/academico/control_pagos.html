@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Control de Pagos y Pensiones - SIGAE{% endblock %}
+{% block nav_pagos %}active{% endblock %}
+{% block header_title %}Control de Pagos y Pensiones{% endblock %}
+{% block header_subtitle %}Gestión de cobros de matrícula, cuotas mensuales, estados de cuenta y recaudación{% endblock %}
+
+{% block content %}
+<!-- Tarjetas de Resumen Financiero (4 Cajas Blancas Distribuidas en Fila Horizontal) -->
+<div class="kpi-grid grid-cols-4">
+    <div class="card" style="border-left: 5px solid var(--success-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Recaudado este Mes
+            </span>
+            <div style="font-size: 1.85rem; font-weight: 700; color: var(--success-color); line-height: 1.1;">
+                S/. {{ recaudado_mes|floatformat:2 }}
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            {{ total_pagos_mes }} cobro{{ total_pagos_mes|pluralize }} confirmado{{ total_pagos_mes|pluralize }}
+        </div>
+    </div>
+
+    <div class="card" style="border-left: 5px solid var(--primary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Alumnos al Día
+            </span>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color); line-height: 1.1;">
+                {{ alumnos_al_dia }}
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Sin cuotas pendientes
+        </div>
+    </div>
+
+    <div class="card" style="border-left: 5px solid #dc2626; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Pensiones Pendientes
+            </span>
+            <div style="font-size: 2rem; font-weight: 700; color: #dc2626; line-height: 1.1;">
+                {{ alumnos_pendientes }}
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Cuotas pendientes de cobro
+        </div>
+    </div>
+
+    <div class="card" style="border-left: 5px solid var(--secondary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Total Alumnos Activos
+            </span>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--secondary-color); line-height: 1.1;">
+                {{ total_alumnos_activos }}
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Padrón matriculado actual
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y Barra de Búsqueda -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <form method="GET" action="{% url 'control_pagos' %}" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label for="q" class="form-label">Buscar por DNI, Alumno o Nro Operación:</label>
+            <input type="text" name="q" id="q" value="{{ q_busqueda }}" class="form-control" placeholder="Ej: 71234567, Juan Perez, OP-1049...">
+        </div>
+
+        <div style="flex: 1; min-width: 170px;">
+            <label for="concepto" class="form-label">Concepto:</label>
+            <select name="concepto" id="concepto" class="form-control">
+                <option value="">Todos los Conceptos</option>
+                {% for c_code, c_label in conceptos_choices %}
+                    <option value="{{ c_code }}" {% if concepto_filtro == c_code %}selected{% endif %}>{{ c_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label for="estado" class="form-label">Estado:</label>
+            <select name="estado" id="estado" class="form-control">
+                <option value="">Todos los Estados</option>
+                {% for e_code, e_label in estados_choices %}
+                    <option value="{{ e_code }}" {% if estado_filtro == e_code %}selected{% endif %}>{{ e_label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary">
+                Filtrar
+            </button>
+            {% if q_busqueda or concepto_filtro or estado_filtro %}
+                <a href="{% url 'control_pagos' %}" class="btn btn-secondary">
+                    Limpiar
+                </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Tabla de Pagos Recientes -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="color: var(--primary-color); margin: 0; font-size: 1.15rem; font-weight: 700;">Historial de Cobros y Pagos</h3>
+            <span style="color: var(--text-muted); font-size: 0.8125rem;">Visualiza y administra las transacciones financieras registradas</span>
+        </div>
+        <a href="{% url 'registrar_pago' %}" class="btn btn-primary" style="font-size: 0.8125rem;">
+            Registrar Nuevo Cobro
+        </a>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Alumno</th>
+                    <th>Concepto</th>
+                    <th>Monto</th>
+                    <th>Método</th>
+                    <th>Nro Operación</th>
+                    <th>Estado</th>
+                    <th>Registrado Por</th>
+                    <th style="text-align: right;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in pagos %}
+                <tr>
+                    <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                    <td>
+                        <div style="font-weight: 600; color: var(--primary-color);">{{ pago.alumno.get_full_name|default:pago.alumno.username }}</div>
+                        <small style="color: var(--text-muted); font-family: monospace;">DNI: {{ pago.alumno.dni }}</small>
+                    </td>
+                    <td>{{ pago.get_concepto_display }}</td>
+                    <td style="font-weight: 700; color: {% if pago.estado == 'PAGADO' %}var(--success-color){% else %}#dc2626{% endif %};">
+                        S/. {{ pago.monto|floatformat:2 }}
+                    </td>
+                    <td>{{ pago.get_metodo_pago_display }}</td>
+                    <td style="font-family: monospace; font-size: 0.8125rem;">{{ pago.numero_operacion|default:"-" }}</td>
+                    <td>
+                        {% if pago.estado == 'PAGADO' %}
+                            <span class="badge badge-success">Pagado</span>
+                        {% elif pago.estado == 'PENDIENTE' %}
+                            <span class="badge badge-danger">Pendiente</span>
+                        {% else %}
+                            <span class="badge badge-warning">Anulado</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.8125rem; color: var(--text-muted);">
+                        {{ pago.registrado_por.username|default:"Sistema" }}
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{% url 'historial_pagos_alumno' pago.alumno.id %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                            Ver Cuenta
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No se encontraron registros de pagos o pensiones.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Alumno - SIGAE{% endblock %}
+{% block nav_registrar_alumno %}active{% endblock %}
+{% block header_title %}Registro de Nuevo Alumno{% endblock %}
+{% block header_subtitle %}Formulario administrativo para el alta de estudiantes y generación automática de usuario{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 0 auto;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Ficha de Inscripción Estudiantil
+    </h3>
+    
+    <form method="POST" action="{% url 'registrar_alumno' %}">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="nombres" class="form-label">Nombres *</label>
+                <input type="text" name="nombres" id="nombres" class="form-control" placeholder="Ej. Jaime Rolando" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="apellidos" class="form-label">Apellidos *</label>
+                <input type="text" name="apellidos" id="apellidos" class="form-control" placeholder="Ej. Perez Condori" required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="dni" class="form-label">DNI (Documento Nacional de Identidad) *</label>
+                <input type="text" name="dni" id="dni" class="form-control" placeholder="8 dígitos" pattern="[0-9]{8}" maxlength="8" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="telefono" class="form-label">Teléfono / Celular</label>
+                <input type="text" name="telefono" id="telefono" class="form-control" placeholder="Ej. 954123456">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="area_academica" class="form-label">Área Académica *</label>
+            <select name="area_academica" id="area_academica" class="form-control" style="background-color: #ffffff; height: 42px; width: 100%; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem 1rem;" required>
+                <option value="" disabled selected>-- Selecciona el Área Académica --</option>
+                <option value="INGENIERIAS">Ingenierías</option>
+                <option value="BIOMEDICAS">Biomédicas</option>
+                <option value="SOCIALES">Sociales</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="email" class="form-label">Correo Electrónico</label>
+            <input type="email" name="email" id="email" class="form-control" placeholder="ejemplo@correo.com">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 2rem;">
+            <label for="direccion" class="form-label">Dirección Domiciliaria</label>
+            <input type="text" name="direccion" id="direccion" class="form-control" placeholder="Ej. Av. Floral 123, Puno">
+        </div>
+
+        <div style="background: rgba(30, 58, 138, 0.05); padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 2rem;">
+            <strong style="color: var(--primary-color); display: block; margin-bottom: 0.25rem;">Reglas del Sistema:</strong>
+            <ul style="color: var(--text-muted); font-size: 0.875rem; padding-left: 1.25rem;">
+                <li>El nombre de usuario se generará automáticamente en MAYÚSCULAS tomando el primer nombre y las iniciales de sus apellidos (Ej: JAIMEPC).</li>
+                <li>En caso de coincidencia, se agregará un sufijo numérico correlativo (Ej: JAIMEPC1).</li>
+                <li>La contraseña de acceso inicial para el alumno será por defecto su número de DNI.</li>
+            </ul>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <a href="{% url 'dashboard_secretaria' %}" class="btn" style="background: #e2e8f0; color: var(--text-color);">Cancelar</a>
+            <button type="submit" class="btn btn-primary" style="padding-left: 2rem; padding-right: 2rem;">
+                Registrar y Generar Cuenta
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Formulario de Carga Masiva -->
+<div class="card" style="max-width: 700px; margin: 2rem auto 0 auto; border-top: 4px solid var(--secondary-color);">
+    <h3 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Carga Masiva de Alumnos (CSV / TXT)
+    </h3>
+    <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
+        Sube un archivo plano delimitado por comas (<code>,</code>) o punto y coma (<code>;</code>) con las siguientes columnas:
+        <br>
+        <strong>Nombres, Apellidos, DNI, Área Académica, Teléfono (opcional), Dirección (opcional), Correo (opcional)</strong>
+        <br>
+        <em>Ejemplo: Juan,Perez Gomez,12345678,INGENIERIAS,951987654,Av Floral 123,juan@mail.com</em>
+        <br>
+        El área debe ser exactamente: <code>INGENIERIAS</code>, <code>BIOMEDICAS</code> o <code>SOCIALES</code>.
+    </p>
+
+    <div style="background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.2); padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <strong style="color: var(--secondary-color); font-size: 0.95rem; display: block;">¿Necesitas la plantilla oficial?</strong>
+            <span style="font-size: 0.8125rem; color: var(--text-muted);">Descarga el formato de ejemplo con cabeceras y estructura válidas para evitar errores de importación.</span>
+        </div>
+        <a href="{% url 'descargar_plantilla_alumnos' %}" class="btn btn-secondary" style="font-size: 0.8125rem;">
+            Descargar Plantilla (.CSV)
+        </a>
+    </div>
+
+    <form method="POST" action="{% url 'registrar_alumno_masivo' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label for="archivo_alumnos" class="form-label">Selecciona el archivo plano</label>
+            <input type="file" name="archivo_alumnos" id="archivo_alumnos" class="form-control" accept=".csv,.txt" required>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary" style="padding-left: 2rem; padding-right: 2rem;">
+                Subir y Registrar Alumnos
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

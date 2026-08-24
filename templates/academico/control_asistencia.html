@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+
+{% block title %}Asistencia QR - SIGAE{% endblock %}
+{% block nav_asistencia_admin %}active{% endblock %}
+{% block nav_asistencia_sec %}active{% endblock %}
+{% block nav_asistencia %}active{% endblock %}
+{% block header_title %}Control de Asistencia por Código QR{% endblock %}
+{% block header_subtitle %}Registro automático en tiempo real y verificación de ingresos presenciales{% endblock %}
+
+{% block content %}
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    #reader video {
+        border-radius: var(--border-radius-sm);
+        object-fit: cover !important;
+    }
+</style>
+
+<div class="grid {% if user.rol == 'SECRETARIA' or user.rol == 'ADMIN' or user.is_superuser or user.is_staff %}grid-cols-3{% else %}grid-cols-2{% endif %}">
+    
+    {% if user.rol == 'SECRETARIA' or user.rol == 'ADMIN' or user.is_superuser or user.is_staff %}
+    <!-- Lector de Código QR Real -->
+    <div class="card" style="grid-column: span 1; display: flex; flex-direction: column;">
+        <h3 style="color: #0f172a; margin-bottom: 0.75rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.4rem; font-size: 1.05rem; font-weight: 700;">
+            Escáner de Credenciales
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 1rem;">
+            Enfoca la credencial QR del alumno o profesor. En dispositivos móviles se activa automáticamente la cámara trasera.
+        </p>
+        
+        <!-- Contenedor del scanner de cámara (centrado y responsive) -->
+        <div id="reader" style="width: 100%; max-width: 360px; margin: 0 auto 1rem auto; border-radius: var(--border-radius); overflow: hidden; background: #0f172a; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--border-color); position: relative;">
+            <span style="color: rgba(255,255,255,0.7); font-size: 0.875rem;">Cámara apagada</span>
+        </div>
+
+        <button id="btn-start" class="btn btn-primary" style="width: 100%; padding: 0.65rem 1rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Abrir Cámara y Escanear
+        </button>
+        <button id="btn-stop" class="btn" style="width: 100%; margin-top: 0.5rem; background: #e2e8f0; color: var(--text-color); display: none;">
+            Cerrar Cámara
+        </button>
+
+        <!-- Feedback de Escaneo -->
+        <div id="scan-feedback" style="margin-top: 1rem; padding: 0.65rem 0.85rem; border-radius: var(--border-radius-sm); font-size: 0.875rem; font-weight: 600; display: none; text-align: center; animation: fadeIn 0.3s ease-out;">
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Listado de Historial -->
+    <div class="card" style="grid-column: span {% if user.rol == 'SECRETARIA' or user.rol == 'ADMIN' or user.is_superuser or user.is_staff %}2{% else %}2{% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.4rem; flex-wrap: wrap; gap: 0.5rem;">
+            <h3 style="color: var(--primary-color); margin: 0; font-size: 1.15rem;">
+                {% if user.rol == 'ALUMNO' %}Mi Historial de Asistencia{% else %}Últimos Ingresos Registrados en Vivo{% endif %}
+            </h3>
+            {% if user.rol != 'ALUMNO' %}
+                <a href="{% url 'exportar_asistencias_csv' %}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;">
+                    Exportar Historial CSV
+                </a>
+            {% endif %}
+        </div>
+        
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        {% if user.rol != 'ALUMNO' %}
+                            <th>Persona (Alumno / Docente)</th>
+                        {% endif %}
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Rol y Área / Curso</th>
+                        <th>Estado / Horas</th>
+                        {% if user.rol != 'ALUMNO' %}
+                            <th>Pensión</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody id="asistencias-body">
+                    {% for asistencia in asistencias_list %}
+                    <tr>
+                        {% if user.rol != 'ALUMNO' %}
+                            <td style="font-weight: 600; color: var(--primary-color);">{{ asistencia.nombre }}</td>
+                        {% endif %}
+                        <td>{{ asistencia.fecha|date:"d/m/Y" }}</td>
+                        <td><span style="font-family: monospace; font-weight: 600;">{{ asistencia.hora|time:"H:i:s" }}</span></td>
+                        <td>
+                            <span class="badge" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color); font-weight: 600;">
+                                {{ asistencia.rol_area }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {{ asistencia.estado_badge }}">{{ asistencia.estado_text }}</span>
+                        </td>
+                        {% if user.rol != 'ALUMNO' %}
+                            <td>
+                                <span class="badge {{ asistencia.estado_pago_badge }}">
+                                    {{ asistencia.estado_pago }}
+                                </span>
+                            </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr class="no-records">
+                        <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                            No hay registros de asistencia en este momento.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmación de Horas Docente -->
+<div id="modal-horas" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 1rem;">
+    <div class="card" style="background: #ffffff; max-width: 440px; width: 100%; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); animation: fadeIn 0.3s ease-out; margin: 0; padding: 1.5rem; border-radius: var(--border-radius);">
+        <h3 style="color: var(--primary-color); border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.4rem; margin-bottom: 0.75rem; font-size: 1.15rem;">
+            Validar Asistencia Docente
+        </h3>
+        <p style="font-size: 0.875rem; color: var(--text-color); margin-bottom: 1.25rem; line-height: 1.5;">
+            El docente <strong id="docente-nombre-modal" style="color: var(--primary-color);">...</strong> ha sido escaneado. Confirme o modifique las horas dictadas a pagar:
+        </p>
+        
+        <input type="hidden" id="docente-id-modal">
+        <input type="hidden" id="token-qr-modal">
+        
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label for="horas-modal" class="form-label" style="font-weight: 600; display: block; margin-bottom: 0.4rem;">Horas dictadas trabajadas:</label>
+            <input type="number" id="horas-modal" class="form-control" step="0.5" min="0" value="1.5" style="background: #ffffff; text-align: center; font-size: 1.25rem; font-weight: 700; width: 100%; border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); padding: 0.5rem; color: var(--primary-color);">
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button id="btn-cancelar-modal" class="btn" style="background: #e2e8f0; color: var(--text-color);">Cancelar</button>
+            <button id="btn-guardar-modal" class="btn btn-secondary" style="padding-left: 1.25rem; padding-right: 1.25rem;">Confirmar Ingreso</button>
+        </div>
+    </div>
+</div>
+
+{% if user.rol == 'SECRETARIA' or user.rol == 'ADMIN' or user.is_superuser or user.is_staff %}
+<!-- Lector QR mediante CDN de html5-qrcode -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const btnStart = document.getElementById("btn-start");
+        const btnStop = document.getElementById("btn-stop");
+        const reader = document.getElementById("reader");
+        const feedback = document.getElementById("scan-feedback");
+        const asistenciasBody = document.getElementById("asistencias-body");
+        
+        let html5QrCode = null;
+        let isScanning = false;
+
+        function showFeedback(message, type) {
+            feedback.style.display = "block";
+            feedback.innerText = message;
+            if (type === "success") {
+                feedback.style.backgroundColor = "rgba(16, 185, 129, 0.12)";
+                feedback.style.color = "#059669";
+                feedback.style.border = "1px solid rgba(16, 185, 129, 0.25)";
+            } else if (type === "info") {
+                feedback.style.backgroundColor = "rgba(30, 58, 138, 0.08)";
+                feedback.style.color = "var(--primary-color)";
+                feedback.style.border = "1px solid rgba(30, 58, 138, 0.15)";
+            } else {
+                feedback.style.backgroundColor = "rgba(239, 68, 68, 0.12)";
+                feedback.style.color = "#dc2626";
+                feedback.style.border = "1px solid rgba(239, 68, 68, 0.25)";
+            }
+        }
+
+        if (btnStart) {
+            btnStart.addEventListener("click", function() {
+                feedback.style.display = "none";
+                reader.innerHTML = "";
+                html5QrCode = new Html5Qrcode("reader");
+                isScanning = true;
+
+                const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+                    stopScanner();
+                    showFeedback("Código detectado. Validando...", "info");
+
+                    fetch("{% url 'control_asistencia' %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        body: JSON.stringify({ token_qr: decodedText })
+                    })
+                    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                    .then(res => {
+                        if (res.status === 200) {
+                            if (res.body.needs_hours_confirmation) {
+                                showFeedback("Código de docente válido. Confirmando horas...", "info");
+                                document.getElementById("docente-nombre-modal").innerText = res.body.docente_nombre;
+                                document.getElementById("docente-id-modal").value = res.body.docente_id;
+                                document.getElementById("token-qr-modal").value = res.body.token_qr;
+                                document.getElementById("horas-modal").value = res.body.sugerencia_horas || "1.5";
+                                document.getElementById("modal-horas").style.display = "flex";
+                            } else {
+                                handleScanSuccess(res.body.asistencia, res.body.mensaje);
+                            }
+                        } else {
+                            showFeedback(res.body.error || "Error al procesar el código.", "error");
+                            setTimeout(startScanner, 3000);
+                        }
+                    })
+                    .catch(error => {
+                        showFeedback("Error de comunicación con el servidor.", "error");
+                        setTimeout(startScanner, 3000);
+                    });
+                };
+
+                const config = { 
+                    fps: 15, 
+                    qrbox: function(viewfinderWidth, viewfinderHeight) {
+                        const minEdgePercentage = 0.72;
+                        const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                        const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                        return {
+                            width: Math.min(240, qrboxSize),
+                            height: Math.min(240, qrboxSize)
+                        };
+                    }
+                };
+
+                function startScanner() {
+                    if (!isScanning) return;
+                    showFeedback("Iniciando cámara y escáner QR...", "info");
+                    
+                    // Intentar iniciar con cámara trasera (environment)
+                    html5QrCode.start(
+                        { facingMode: "environment" }, 
+                        config, 
+                        qrCodeSuccessCallback
+                    )
+                    .then(() => {
+                        showFeedback("Enfocando... Presenta la credencial QR", "info");
+                        btnStart.style.display = "none";
+                        btnStop.style.display = "block";
+                        reader.style.border = "2px solid var(--primary-color)";
+                    })
+                    .catch(err => {
+                        // Fallback a cualquier cámara disponible (e.g. cámara frontal o webcam de laptop)
+                        html5QrCode.start(
+                            { facingMode: "user" }, 
+                            config, 
+                            qrCodeSuccessCallback
+                        )
+                        .then(() => {
+                            showFeedback("Enfocando... Presenta la credencial QR", "info");
+                            btnStart.style.display = "none";
+                            btnStop.style.display = "block";
+                            reader.style.border = "2px solid var(--primary-color)";
+                        })
+                        .catch(errFallback => {
+                            showFeedback("Error de cámara: " + (errFallback.message || errFallback), "error");
+                            btnStart.style.display = "block";
+                            btnStop.style.display = "none";
+                            reader.style.border = "none";
+                            reader.innerHTML = `<span style="color: rgba(255,255,255,0.7); font-size: 0.875rem;">Cámara apagada</span>`;
+                        });
+                    });
+                }
+
+                startScanner();
+            });
+        }
+
+        // Configuración de eventos del Modal
+        const modal = document.getElementById("modal-horas");
+        const btnCancelarModal = document.getElementById("btn-cancelar-modal");
+        const btnGuardarModal = document.getElementById("btn-guardar-modal");
+
+        if (btnCancelarModal) {
+            btnCancelarModal.addEventListener("click", function() {
+                modal.style.display = "none";
+                showFeedback("Validación docente cancelada.", "error");
+                if (isScanning && html5QrCode) {
+                    setTimeout(startScanner, 1000);
+                }
+            });
+        }
+
+        if (btnGuardarModal) {
+            btnGuardarModal.addEventListener("click", function() {
+                const docenteId = document.getElementById("docente-id-modal").value;
+                const tokenQr = document.getElementById("token-qr-modal").value;
+                const horas = document.getElementById("horas-modal").value;
+
+                btnGuardarModal.disabled = true;
+                btnGuardarModal.innerText = "Guardando...";
+
+                fetch("{% url 'registrar_asistencia_docente' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({
+                        docente_id: docenteId,
+                        token_qr: tokenQr,
+                        horas: horas
+                    })
+                })
+                .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                .then(res => {
+                    btnGuardarModal.disabled = false;
+                    btnGuardarModal.innerText = "Confirmar Ingreso";
+                    modal.style.display = "none";
+
+                    if (res.status === 200) {
+                        handleScanSuccess(res.body.asistencia, res.body.mensaje);
+                    } else {
+                        showFeedback(res.body.error || "Error al registrar la asistencia.", "error");
+                        if (isScanning && html5QrCode) {
+                            setTimeout(startScanner, 3000);
+                        }
+                    }
+                })
+                .catch(error => {
+                    btnGuardarModal.disabled = false;
+                    btnGuardarModal.innerText = "Confirmar Ingreso";
+                    modal.style.display = "none";
+                    showFeedback("Error de comunicación con el servidor.", "error");
+                    if (isScanning && html5QrCode) {
+                        setTimeout(startScanner, 3000);
+                    }
+                });
+            });
+        }
+
+        function handleScanSuccess(record, successMsg) {
+            showFeedback(successMsg, "success");
+
+            const noRecordsRow = asistenciasBody.querySelector(".no-records");
+            if (noRecordsRow) {
+                noRecordsRow.remove();
+            }
+
+            const newRow = document.createElement("tr");
+            newRow.style.animation = "fadeIn 0.5s ease-out";
+            
+            const badgeClass = record.rol_display === "Docente" ? "badge-warning" : "badge-success";
+            const rolAreaDisplay = record.rol_area || (record.rol_display === "Docente" ? "Docente - Dictado" : "Alumno - General");
+            const estadoPagoDisplay = record.estado_pago ? `<span class="badge ${record.estado_pago_badge || 'badge-primary'}">${record.estado_pago}</span>` : '-';
+            
+            newRow.innerHTML = `
+                <td style="font-weight: 600; color: var(--primary-color);">${record.nombre}</td>
+                <td>${record.fecha}</td>
+                <td><span style="font-family: monospace; font-weight: 600;">${record.hora}</span></td>
+                <td>
+                    <span class="badge" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color); font-weight: 600;">
+                        ${rolAreaDisplay}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${badgeClass}">${record.estado}</span>
+                </td>
+                <td>
+                    ${estadoPagoDisplay}
+                </td>
+            `;
+            asistenciasBody.insertBefore(newRow, asistenciasBody.firstChild);
+
+            playBeep();
+
+            if (isScanning && html5QrCode) {
+                setTimeout(startScanner, 3000);
+            }
+        }
+
+        if (btnStop) {
+            btnStop.addEventListener("click", stopScannerFully);
+        }
+
+        function stopScanner() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    reader.style.border = "none";
+                }).catch(err => console.error("Error al pausar:", err));
+            }
+        }
+
+        function stopScannerFully() {
+            isScanning = false;
+            if (html5QrCode) {
+                if (html5QrCode.isScanning) {
+                    html5QrCode.stop().then(() => {
+                        html5QrCode = null;
+                        btnStart.style.display = "block";
+                        btnStop.style.display = "none";
+                        feedback.style.display = "none";
+                        reader.style.border = "none";
+                        reader.innerHTML = `<span style="color: rgba(255,255,255,0.7); font-size: 0.875rem;">Cámara apagada</span>`;
+                    }).catch(err => console.error("Error al apagar:", err));
+                } else {
+                    html5QrCode = null;
+                    btnStart.style.display = "block";
+                    btnStop.style.display = "none";
+                    feedback.style.display = "none";
+                    reader.style.border = "none";
+                    reader.innerHTML = `<span style="color: rgba(255,255,255,0.7); font-size: 0.875rem;">Cámara apagada</span>`;
+                }
+            }
+        }
+
+        function playBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {
+                console.log("AudioContext bloqueado o no disponible.");
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

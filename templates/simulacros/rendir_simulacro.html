@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Rendir Simulacro - SIGAE{% endblock %}
+{% block nav_simulacros %}active{% endblock %}
+{% block header_title %}{{ simulacro.titulo }}{% endblock %}
+{% block header_subtitle %}Hoja de respuestas electrónica. Lee detenidamente cada pregunta antes de marcar.{% endblock %}
+
+{% block content %}
+<form method="POST" action="{% url 'procesar_respuestas' simulacro.id %}">
+    {% csrf_token %}
+    
+    {% for preg in preguntas %}
+    <div class="card" style="margin-bottom: 2rem;">
+        <h4 style="color: var(--primary-color); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; display: flex; justify-content: space-between;">
+            <span>Pregunta {{ preg.numero_pregunta }}</span>
+            <span style="font-size: 0.8125rem; font-weight: normal; color: var(--text-muted);">
+                Correcta: +{{ preg.puntaje_correcta }} | Incorrecta: {{ preg.puntaje_incorrecta }}
+            </span>
+        </h4>
+        
+        <p style="font-weight: 500; font-size: 1.1rem; margin-bottom: 1.5rem;">
+            {{ preg.enunciado }}
+        </p>
+        
+        <div class="alternativas-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--border-radius); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(0,0,0,0.02)'" onmouseout="this.style.backgroundColor='transparent'">
+                <input type="radio" name="pregunta_{{ preg.id }}" value="A" required>
+                <strong>A)</strong> {{ preg.alternativa_a }}
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--border-radius); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(0,0,0,0.02)'" onmouseout="this.style.backgroundColor='transparent'">
+                <input type="radio" name="pregunta_{{ preg.id }}" value="B">
+                <strong>B)</strong> {{ preg.alternativa_b }}
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--border-radius); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(0,0,0,0.02)'" onmouseout="this.style.backgroundColor='transparent'">
+                <input type="radio" name="pregunta_{{ preg.id }}" value="C">
+                <strong>C)</strong> {{ preg.alternativa_c }}
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--border-radius); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(0,0,0,0.02)'" onmouseout="this.style.backgroundColor='transparent'">
+                <input type="radio" name="pregunta_{{ preg.id }}" value="D">
+                <strong>D)</strong> {{ preg.alternativa_d }}
+            </label>
+            
+            {% if preg.alternativa_e %}
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--border-radius); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(0,0,0,0.02)'" onmouseout="this.style.backgroundColor='transparent'">
+                <input type="radio" name="pregunta_{{ preg.id }}" value="E">
+                <strong>E)</strong> {{ preg.alternativa_e }}
+            </label>
+            {% endif %}
+
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: var(--border-radius); transition: background-color 0.2s; color: var(--text-muted);" onmouseover="this.style.backgroundColor='rgba(0,0,0,0.02)'" onmouseout="this.style.backgroundColor='transparent'">
+                <input type="radio" name="pregunta_{{ preg.id }}" value="O" checked>
+                <em>Dejar en blanco (Omitir)</em>
+            </label>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">
+        <p style="text-align: center; color: var(--text-muted); padding: 2rem;">Este simulacro no contiene preguntas formuladas actualmente.</p>
+    </div>
+    {% endfor %}
+    
+    {% if preguntas %}
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 3rem;">
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1.1rem; box-shadow: var(--shadow-lg);">
+            Enviar Respuestas y Finalizar Examen
+        </button>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}

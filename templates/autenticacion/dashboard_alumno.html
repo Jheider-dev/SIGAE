@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel del Alumno - SIGAE{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block header_title %}Bienvenido, {{ user.get_full_name|default:user.username }}{% endblock %}
+{% block header_subtitle %}Panel de control, métricas de rendimiento y seguimiento académico{% endblock %}
+
+{% block content %}
+<!-- Tarjetas de Resumen Métrico -->
+<div class="grid grid-cols-2" style="margin-bottom: 2rem;">
+    <!-- Tarjeta 1: Último Simulacro -->
+    <div class="card" style="border-left: 5px solid var(--primary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">
+                Último Simulacro Rendido
+            </span>
+            {% if ultimo_simulacro %}
+                <div style="font-size: 1.15rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.25rem;">
+                    {{ ultimo_simulacro.titulo }}
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.5rem;">
+                    <span style="font-size: 2.25rem; font-weight: 700; color: var(--success-color); line-height: 1;">
+                        {{ ultimo_simulacro.puntaje }}
+                    </span>
+                    <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">
+                        / {{ ultimo_simulacro.puntaje_maximo }} pts
+                    </span>
+                </div>
+                <div style="margin-top: 0.75rem;">
+                    <span class="badge badge-warning" style="font-size: 0.8125rem; padding: 0.35rem 0.75rem; font-weight: 600;">
+                        Puesto {{ ultimo_simulacro.puesto }} de {{ ultimo_simulacro.total_area }} en {{ user.get_area_academica_display }}
+                    </span>
+                </div>
+            {% else %}
+                <div style="font-size: 1.25rem; font-weight: 600; color: var(--text-muted); margin: 0.75rem 0;">
+                    Sin evaluaciones registradas
+                </div>
+                <p style="font-size: 0.875rem; color: var(--text-muted); margin: 0;">
+                    Rinde tu primer simulacro activo para conocer tu puntaje y posición en el ranking de tu área.
+                </p>
+            {% endif %}
+        </div>
+        <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <a href="{% url 'listar_simulacros' %}" class="btn btn-primary" style="font-size: 0.8125rem; padding: 0.35rem 1rem;">
+                Ir a Simulacros →
+            </a>
+        </div>
+    </div>
+
+    <!-- Tarjeta 2: Récord de Asistencia -->
+    <div class="card" style="border-left: 5px solid var(--secondary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">
+                Récord de Asistencia ({{ record_asistencia.ciclo_nombre }})
+            </span>
+            <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-top: 0.5rem;">
+                <span style="font-size: 2.25rem; font-weight: 700; color: var(--primary-color); line-height: 1;">
+                    {{ record_asistencia.porcentaje }}%
+                </span>
+                <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">
+                    de asistencia
+                </span>
+            </div>
+            <div style="margin-top: 0.75rem;">
+                <span class="badge badge-success" style="font-size: 0.8125rem; padding: 0.35rem 0.75rem; font-weight: 600;">
+                    {{ record_asistencia.presentes }} de {{ record_asistencia.total_sesiones }} sesión{{ record_asistencia.total_sesiones|pluralize:"es" }}
+                </span>
+            </div>
+        </div>
+        <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <a href="{% url 'control_asistencia' %}" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.35rem 1rem;">
+                Ver Historial →
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Accesos Rápidos del Alumno -->
+<div class="card">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.25rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Mis Accesos Principales
+    </h3>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="{% url 'listar_simulacros' %}" class="btn btn-primary">
+            Simulacros Activos
+        </a>
+        <a href="{% url 'perfil_alumno' %}" class="btn btn-secondary">
+            Mi Credencial QR
+        </a>
+        <a href="{% url 'control_asistencia' %}" class="btn" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
+            Mi Historial de Asistencia
+        </a>
+    </div>
+</div>
+{% endblock %}

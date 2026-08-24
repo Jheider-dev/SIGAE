@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Banco de Simulacros - SIGAE{% endblock %}
+{% block nav_simulacros_admin %}active{% endblock %}
+{% block header_title %}Banco de Simulacros y Evaluaciones{% endblock %}
+{% block header_subtitle %}Gestión centralizada de exámenes, reportes de notas y rankings generales de la academia{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h3 style="color: #0f172a; margin: 0; font-size: 1.05rem; font-weight: 700;">Todos los Simulacros Registrados</h3>
+            <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 0.8125rem;">Consulta los resultados y cuadros de mérito de cada prueba programada.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{% url 'descargar_plantilla_simulacro' %}" class="btn btn-secondary" style="font-size: 0.8125rem;">
+                Plantilla CSV
+            </a>
+            <a href="{% url 'crear_simulacro_claves' %}" class="btn btn-primary" style="font-size: 0.8125rem;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Cargar Nuevo Simulacro
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Simulacro</th>
+                    <th>Docente Responsable</th>
+                    <th>Fecha de Evaluación</th>
+                    <th>Área Académica</th>
+                    <th>Puntaje Máximo</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sim in simulacros %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--primary-color);">{{ sim.titulo }}</td>
+                    <td>
+                        {% if sim.docente %}
+                            {{ sim.docente.get_full_name }}
+                        {% else %}
+                            <span style="color: var(--text-muted);">Administración General</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ sim.fecha|date:"d/m/Y" }}</td>
+                    <td>
+                        <span class="badge badge-primary">
+                            {{ sim.get_area_academica_display }}
+                        </span>
+                    </td>
+                    <td>{{ sim.puntaje_maximo }} pts</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap;">
+                            <a href="{% url 'ver_reporte_notas' sim.id %}" class="btn btn-primary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                                Ver Notas
+                            </a>
+                            <a href="{% url 'ver_ranking_html' sim.id %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                                Ranking
+                            </a>
+                            <a href="{% url 'exportar_ranking_simulacro_csv' sim.id %}" class="btn" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color); padding: 0.3rem 0.65rem; font-size: 0.75rem;">
+                                CSV
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No hay simulacros registrados en el sistema.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

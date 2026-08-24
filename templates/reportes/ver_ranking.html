@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Ranking de Mérito - SIGAE{% endblock %}
+{% block nav_simulacros %}{% if user.rol == 'ALUMNO' %}active{% endif %}{% endblock %}
+{% block nav_ciclos %}{% if user.rol != 'ALUMNO' %}active{% endif %}{% endblock %}
+{% block header_title %}Cuadro de Mérito y Estadísticas{% endblock %}
+{% block header_subtitle %}{{ simulacro.titulo }} - Rendimiento General de Postulantes{% endblock %}
+
+{% block content %}
+<!-- Tarjetas de Estadísticas Agregadas -->
+<div class="grid grid-cols-3" style="margin-bottom: 2rem;">
+    <div class="card" style="text-align: center; border-top: 4px solid var(--primary-color);">
+        <span style="color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; font-weight: 600;">Participantes</span>
+        <h2 style="font-size: 2.25rem; font-weight: 700; color: var(--primary-color); margin-top: 0.5rem;">
+            {{ stats.total_participantes }}
+        </h2>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Exámenes calificados</p>
+    </div>
+
+    <div class="card" style="text-align: center; border-top: 4px solid var(--success-color);">
+        <span style="color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; font-weight: 600;">Puntaje Promedio</span>
+        <h2 style="font-size: 2.25rem; font-weight: 700; color: var(--success-color); margin-top: 0.5rem;">
+            {{ stats.puntaje_promedio }}
+        </h2>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Nota media grupal</p>
+    </div>
+
+    <div class="card" style="text-align: center; border-top: 4px solid var(--secondary-color);">
+        <span style="color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; font-weight: 600;">Puntaje Máximo / Mínimo</span>
+        <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-top: 0.5rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; height: 3.375rem;">
+            <span style="color: var(--success-color);">{{ stats.puntaje_maximo }}</span>
+            <span style="color: var(--text-muted); font-weight: normal; font-size: 1rem;">/</span>
+            <span style="color: var(--danger-color);">{{ stats.puntaje_minimo }}</span>
+        </h2>
+    </div>
+</div>
+
+<!-- Tabla de Ranking de Mérito -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="color: var(--primary-color); margin: 0; font-size: 1.25rem;">
+            {% if user.rol == 'ALUMNO' %}
+                Ranking Segmentado: {{ user.get_area_academica_display }}
+            {% else %}
+                Ranking de Postulantes {% if area_filtro %}- {{ area_filtro }}{% endif %}
+            {% endif %}
+        </h3>
+        
+        {% if user.rol != 'ALUMNO' %}
+        <!-- Selector de Área y Exportar CSV -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+            <a href="{% url 'exportar_ranking_simulacro_csv' simulacro.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.75rem; font-size: 0.8125rem;">
+                Exportar CSV
+            </a>
+            <a href="?area=" class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.8125rem; {% if not area_filtro %}background: var(--primary-color); color: #ffffff;{% else %}background: rgba(0,0,0,0.05); color: var(--text-color);{% endif %}">
+                General
+            </a>
+            {% for cod, nom in areas_list %}
+            <a href="?area={{ cod }}" class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.8125rem; {% if area_filtro == cod %}background: var(--primary-color); color: #ffffff;{% else %}background: rgba(0,0,0,0.05); color: var(--text-color);{% endif %}">
+                {{ nom }}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th style="width: 80px; text-align: center;">Puesto</th>
+                    <th>Código Matrícula</th>
+                    <th>Postulante</th>
+                    <th>Área Académica</th>
+                    <th style="text-align: center;">Correctas</th>
+                    <th style="text-align: center;">Incorrectas</th>
+                    <th style="text-align: center;">Omitidas</th>
+                    <th style="text-align: right; width: 120px;">Puntaje Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fila in ranking %}
+                <tr {% if user.username == fila.username %}style="background-color: rgba(217, 119, 6, 0.08); font-weight: 600; border-left: 4px solid var(--secondary-color);"{% endif %}>
+                    <td style="text-align: center; font-weight: bold; color: {% if fila.puesto == 1 %}#d97706{% elif fila.puesto == 2 %}#64748b{% elif fila.puesto == 3 %}#b45309{% else %}var(--primary-color){% endif %};">
+                        {{ fila.puesto }}
+                    </td>
+                    <td style="font-family: monospace;">{{ fila.codigo_alumno }}</td>
+                    <td style="color: var(--primary-color); font-weight: 600;">{{ fila.nombre_completo }}</td>
+                    <td><span class="badge" style="background: rgba(30, 58, 138, 0.05); color: var(--text-color);">{{ fila.area_academica }}</span></td>
+                    <td style="text-align: center; color: var(--success-color); font-weight: 500;">{{ fila.respuestas_correctas }}</td>
+                    <td style="text-align: center; color: var(--danger-color); font-weight: 500;">{{ fila.respuestas_incorrectas }}</td>
+                    <td style="text-align: center; color: var(--text-muted);">{{ fila.respuestas_omitidas }}</td>
+                    <td style="text-align: right; font-weight: bold; color: var(--primary-color); font-size: 1.1rem;">
+                        {{ fila.puntaje_total|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No hay registros de evaluación para este simulacro.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+        {% if user.rol == 'ALUMNO' %}
+            <a href="{% url 'listar_simulacros' %}" class="btn btn-primary">Volver a Simulacros</a>
+        {% else %}
+            <a href="{% url 'listar_ciclos' %}" class="btn btn-primary">Volver a Ciclos</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

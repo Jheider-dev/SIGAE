@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Simulacros Académicos - SIGAE{% block nav_simulacros %}active{% endblock %}{% endblock %}
+{% block header_title %}Simulacros de Evaluación{% endblock %}
+{% block header_subtitle %}Listado de exámenes activos y tu historial personal de calificaciones{% endblock %}
+
+{% block content %}
+<!-- Sección de Simulacros Activos Disponibles -->
+<div class="card" style="margin-bottom: 2rem;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Exámenes y Simulacros Disponibles
+    </h3>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Examen / Simulacro</th>
+                    <th>Fecha Programada</th>
+                    <th>Puntaje Ideal</th>
+                    <th>Área</th>
+                    <th style="text-align: right;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sim in simulacros_activos %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--primary-color);">{{ sim.titulo }}</td>
+                    <td>{{ sim.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ sim.puntaje_maximo }} pts</td>
+                    <td>
+                        <span class="badge" style="background: rgba(30, 58, 138, 0.05); color: var(--text-color);">
+                            {{ sim.get_area_academica_display }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{% url 'rendir_simulacro' sim.id %}" class="btn btn-primary" style="font-size: 0.8125rem; padding: 0.35rem 1rem;">
+                            Rendir Examen
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        No tienes simulacros pendientes por rendir en tu área académica en este momento.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Sección de Historial de Simulacros Rendidos -->
+<div class="card">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Historial de Simulacros Rendidos
+    </h3>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Examen / Simulacro</th>
+                    <th>Fecha de Examen</th>
+                    <th>Puntaje Máximo</th>
+                    <th>Puntaje Obtenido</th>
+                    <th>Puesto / Ranking</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in historial_rendidos %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--primary-color);">{{ item.simulacro.titulo }}</td>
+                    <td>{{ item.simulacro.fecha|date:"d/m/Y" }}</td>
+                    <td>{{ item.simulacro.puntaje_maximo }} pts</td>
+                    <td style="font-weight: bold; color: var(--success-color);">
+                        {{ item.puntaje_total }} pts
+                    </td>
+                    <td>
+                        <span class="badge badge-warning" style="font-size: 0.75rem; font-weight: 600;">
+                            Puesto {{ item.puesto }} de {{ item.total_evaluados }}
+                        </span>
+                    </td>
+                    <td style="text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                        <a href="{% url 'ver_revision_simulacro' item.simulacro.id %}" class="btn btn-primary" style="font-size: 0.8125rem; padding: 0.35rem 0.85rem;">
+                            Revisión
+                        </a>
+                        <a href="{% url 'ver_ranking_html' item.simulacro.id %}" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 0.35rem 0.85rem;">
+                            Ranking
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                        Aún no has rendido ningún simulacro en el sistema.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

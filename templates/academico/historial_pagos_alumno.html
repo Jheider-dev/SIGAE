@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Cuenta de Alumno - {{ alumno.get_full_name }} - SIGAE{% endblock %}
+{% block nav_pagos %}active{% endblock %}
+{% block header_title %}Estado de Cuenta y Pagos{% endblock %}
+{% block header_subtitle %}Historial de cuotas, matrículas y pensiones del estudiante{% endblock %}
+
+{% block content %}
+<!-- Perfil del Estudiante y Resumen de Pagos -->
+<div class="grid grid-cols-3" style="margin-bottom: 2rem;">
+    <!-- Tarjeta de Datos del Alumno -->
+    <div class="card" style="border-left: 5px solid var(--primary-color); margin-bottom: 0;">
+        <h3 style="color: var(--primary-color); margin-bottom: 0.5rem; font-size: 1.15rem;">{{ alumno.get_full_name }}</h3>
+        <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0 0 0.5rem 0;">
+            DNI: <strong>{{ alumno.dni }}</strong> | Usuario: <strong>{{ alumno.username }}</strong>
+        </p>
+        <div style="font-size: 0.8125rem; color: var(--text-color); margin-bottom: 0.5rem;">
+            Área: <strong>{{ alumno.get_area_academica_display }}</strong>
+        </div>
+        <div style="font-size: 0.8125rem; color: var(--text-color);">
+            Ciclo Actual: <strong>{{ matricula.ciclo.nombre|default:"Sin Ciclo Asignado" }}</strong>
+        </div>
+    </div>
+
+    <!-- Estado Financiero -->
+    <div class="card" style="border-left: 5px solid {% if estado_badge == 'badge-success' %}var(--success-color){% else %}#dc2626{% endif %}; margin-bottom: 0;">
+        <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">
+            Situación Financiera
+        </span>
+        <div style="margin-bottom: 0.5rem;">
+            <span class="badge {{ estado_badge }}" style="font-size: 1rem; padding: 0.4rem 1rem;">
+                {{ estado_financiero }}
+            </span>
+        </div>
+        <div style="font-size: 0.8125rem; color: var(--text-muted);">
+            {% if pagos_pendientes_count > 0 %}
+                Tiene {{ pagos_pendientes_count }} cuota{{ pagos_pendientes_count|pluralize }} pendiente{{ pagos_pendientes_count|pluralize }} de pago
+            {% else %}
+                No registra cuotas vencidas pendientes
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Total Abonado -->
+    <div class="card" style="border-left: 5px solid var(--secondary-color); margin-bottom: 0;">
+        <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">
+            Total Abonado Acumulado
+        </span>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color); line-height: 1.1;">
+            S/. {{ total_pagado|floatformat:2 }}
+        </div>
+        <div style="margin-top: 0.75rem;">
+            <a href="{% url 'registrar_pago_alumno' alumno.id %}" class="btn btn-primary" style="font-size: 0.8125rem; padding: 0.35rem 0.85rem;">
+                + Registrar Abono
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Pagos Registrados -->
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="color: var(--primary-color); margin: 0; font-size: 1.15rem; font-weight: 700;">Detalle de Transacciones del Estudiante</h3>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{% url 'control_pagos' %}" class="btn btn-secondary" style="font-size: 0.8125rem;">
+                Volver a Pagos
+            </a>
+            <a href="{% url 'listar_alumnos' %}" class="btn" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color); font-size: 0.8125rem;">
+                Padrón de Alumnos
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha de Pago</th>
+                    <th>Concepto</th>
+                    <th>Ciclo</th>
+                    <th>Monto</th>
+                    <th>Método de Pago</th>
+                    <th>Nro Operación</th>
+                    <th>Estado</th>
+                    <th>Registrado Por</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in pagos %}
+                <tr>
+                    <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                    <td style="font-weight: 600; color: var(--primary-color);">{{ pago.get_concepto_display }}</td>
+                    <td>{{ pago.ciclo.nombre|default:"General" }}</td>
+                    <td style="font-weight: 700; color: {% if pago.estado == 'PAGADO' %}var(--success-color){% else %}#dc2626{% endif %};">
+                        S/. {{ pago.monto|floatformat:2 }}
+                    </td>
+                    <td>{{ pago.get_metodo_pago_display }}</td>
+                    <td style="font-family: monospace; font-size: 0.8125rem;">{{ pago.numero_operacion|default:"-" }}</td>
+                    <td>
+                        {% if pago.estado == 'PAGADO' %}
+                            <span class="badge badge-success">Pagado</span>
+                        {% elif pago.estado == 'PENDIENTE' %}
+                            <span class="badge badge-danger">Pendiente</span>
+                        {% else %}
+                            <span class="badge badge-warning">Anulado</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.8125rem; color: var(--text-muted);">
+                        {{ pago.registrado_por.username|default:"Sistema" }}
+                    </td>
+                    <td style="text-align: right;">
+                        <form method="POST" action="{% url 'cambiar_estado_pago' pago.id %}" style="display: inline-flex; gap: 0.25rem;">
+                            {% csrf_token %}
+                            {% if pago.estado != 'PAGADO' %}
+                                <button type="submit" name="nuevo_estado" value="PAGADO" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" title="Marcar como Pagado">
+                                    Marcar Pagado
+                                </button>
+                            {% endif %}
+                            {% if pago.estado != 'PENDIENTE' and pago.estado != 'ANULADO' %}
+                                <button type="submit" name="nuevo_estado" value="PENDIENTE" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" title="Marcar como Pendiente">
+                                    Marcar Pendiente
+                                </button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+                        No hay pagos o cuotas registradas para este alumno.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

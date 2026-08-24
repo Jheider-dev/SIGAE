@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Revisión de Simulacro - {{ simulacro.titulo }} - SIGAE{% endblock %}
+{% block nav_simulacros %}active{% endblock %}
+{% block header_title %}Revisión y Desglose de Evaluación{% endblock %}
+{% block header_subtitle %}Detalle de aciertos, desaciertos, puntajes y claves oficiales del simulacro{% endblock %}
+
+{% block content %}
+<!-- Tarjetas de Resumen de Resultados -->
+<div class="kpi-grid grid-cols-4">
+    <!-- Puntaje Total -->
+    <div class="card" style="border-left: 5px solid var(--primary-color); margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">
+            Puntaje Obtenido
+        </span>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color); line-height: 1.1;">
+            {{ resultado.puntaje_total|floatformat:2 }} <span style="font-size: 0.875rem; color: var(--text-muted); font-weight: 500;">/ {{ simulacro.puntaje_maximo }}</span>
+        </div>
+        <div style="margin-top: 0.75rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Rendimiento: <strong>{{ porcentaje_acierto }}%</strong>
+        </div>
+    </div>
+
+    <!-- Puesto en Ranking de Área -->
+    <div class="card" style="border-left: 5px solid var(--secondary-color); margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">
+            Cuadro de Mérito
+        </span>
+        <div style="font-size: 1.75rem; font-weight: 700; color: var(--secondary-color); line-height: 1.1; margin-bottom: 0.35rem;">
+            Puesto {{ puesto }}°
+        </div>
+        <div style="font-size: 0.8125rem; color: var(--text-muted);">
+            De {{ total_evaluados_area }} en {{ alumno.get_area_academica_display }}
+        </div>
+    </div>
+
+    <!-- Respuestas Correctas -->
+    <div class="card" style="border-left: 5px solid var(--success-color); margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">
+            Aciertos (Correctas)
+        </span>
+        <div style="font-size: 2rem; font-weight: 700; color: var(--success-color); line-height: 1.1;">
+            {{ resultado.respuestas_correctas }}
+        </div>
+        <div style="margin-top: 0.75rem; font-size: 0.8125rem; color: var(--text-muted);">
+            De {{ total_preguntas }} preguntas
+        </div>
+    </div>
+
+    <!-- Respuestas Incorrectas y Omitidas -->
+    <div class="card" style="border-left: 5px solid #dc2626; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">
+            Desaciertos y Omitidas
+        </span>
+        <div style="display: flex; gap: 0.75rem; align-items: baseline; margin-top: 0.25rem;">
+            <div>
+                <span style="font-size: 1.5rem; font-weight: 700; color: #dc2626;">{{ resultado.respuestas_incorrectas }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Incorrectas</span>
+            </div>
+            <div style="border-left: 1px solid var(--border-color); padding-left: 0.75rem;">
+                <span style="font-size: 1.5rem; font-weight: 700; color: var(--warning-color);">{{ resultado.respuestas_omitidas }}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">En blanco</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Barra de Navegación y Acciones -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h3 style="color: var(--primary-color); margin: 0; font-size: 1.25rem;">{{ simulacro.titulo }}</h3>
+        <span style="color: var(--text-muted); font-size: 0.875rem;">
+            Fecha de Examen: {{ simulacro.fecha|date:"d/m/Y" }} | Área: <strong>{{ simulacro.get_area_academica_display }}</strong>
+        </span>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="{% url 'ver_ranking_html' simulacro.id %}" class="btn btn-secondary" style="font-size: 0.8125rem;">
+            Ver Ranking General
+        </a>
+        <a href="{% url 'listar_simulacros' %}" class="btn" style="background: #e2e8f0; color: var(--text-color); font-size: 0.8125rem;">
+            Volver a Simulacros
+        </a>
+    </div>
+</div>
+
+<!-- Listado Pregunta por Pregunta -->
+<div style="display: flex; flex-direction: column; gap: 1.25rem;">
+    {% for item in desglose %}
+    <div class="card" style="border-left: 5px solid {% if item.estado_resp == 'CORRECTA' %}var(--success-color){% elif item.estado_resp == 'INCORRECTA' %}#dc2626{% else %}var(--warning-color){% endif %}; margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-weight: 700; font-size: 1.05rem; color: var(--primary-color);">Pregunta #{{ item.numero }}</span>
+                <span class="badge {{ item.estado_badge }}">
+                    {{ item.estado_texto }}
+                </span>
+            </div>
+            <div style="font-size: 0.875rem; font-weight: 600;">
+                Puntaje Otorgado: 
+                <strong style="color: {% if item.puntaje > 0 %}var(--success-color){% elif item.puntaje < 0 %}#dc2626{% else %}var(--text-muted){% endif %};">
+                    {% if item.puntaje > 0 %}+{% endif %}{{ item.puntaje|floatformat:2 }} pts
+                </strong>
+            </div>
+        </div>
+
+        <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-color); margin-bottom: 1rem; font-weight: 500;">
+            {{ item.enunciado }}
+        </div>
+
+        <!-- Alternativas -->
+        <div style="display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.875rem;">
+            <!-- Opción A -->
+            <div style="padding: 0.5rem 0.75rem; border-radius: var(--border-radius); border: 1px solid {% if item.clave_correcta == 'A' %}var(--success-color){% elif item.clave_marcada == 'A' and item.clave_correcta != 'A' %}#dc2626{% else %}var(--border-color){% endif %}; background: {% if item.clave_correcta == 'A' %}rgba(16, 185, 129, 0.08){% elif item.clave_marcada == 'A' and item.clave_correcta != 'A' %}rgba(239, 68, 68, 0.08){% else %}transparent{% endif %};">
+                <strong>A)</strong> {{ item.alternativa_a }}
+                {% if item.clave_correcta == 'A' %}<span class="badge badge-success" style="margin-left: 0.5rem;">Respuesta Correcta</span>{% endif %}
+                {% if item.clave_marcada == 'A' %}<span class="badge" style="background: rgba(30, 58, 138, 0.1); color: var(--primary-color); margin-left: 0.5rem;">Tu Elección</span>{% endif %}
+            </div>
+
+            <!-- Opción B -->
+            <div style="padding: 0.5rem 0.75rem; border-radius: var(--border-radius); border: 1px solid {% if item.clave_correcta == 'B' %}var(--success-color){% elif item.clave_marcada == 'B' and item.clave_correcta != 'B' %}#dc2626{% else %}var(--border-color){% endif %}; background: {% if item.clave_correcta == 'B' %}rgba(16, 185, 129, 0.08){% elif item.clave_marcada == 'B' and item.clave_correcta != 'B' %}rgba(239, 68, 68, 0.08){% else %}transparent{% endif %};">
+                <strong>B)</strong> {{ item.alternativa_b }}
+                {% if item.clave_correcta == 'B' %}<span class="badge badge-success" style="margin-left: 0.5rem;">Respuesta Correcta</span>{% endif %}
+                {% if item.clave_marcada == 'B' %}<span class="badge" style="background: rgba(30, 58, 138, 0.1); color: var(--primary-color); margin-left: 0.5rem;">Tu Elección</span>{% endif %}
+            </div>
+
+            <!-- Opción C -->
+            <div style="padding: 0.5rem 0.75rem; border-radius: var(--border-radius); border: 1px solid {% if item.clave_correcta == 'C' %}var(--success-color){% elif item.clave_marcada == 'C' and item.clave_correcta != 'C' %}#dc2626{% else %}var(--border-color){% endif %}; background: {% if item.clave_correcta == 'C' %}rgba(16, 185, 129, 0.08){% elif item.clave_marcada == 'C' and item.clave_correcta != 'C' %}rgba(239, 68, 68, 0.08){% else %}transparent{% endif %};">
+                <strong>C)</strong> {{ item.alternativa_c }}
+                {% if item.clave_correcta == 'C' %}<span class="badge badge-success" style="margin-left: 0.5rem;">Respuesta Correcta</span>{% endif %}
+                {% if item.clave_marcada == 'C' %}<span class="badge" style="background: rgba(30, 58, 138, 0.1); color: var(--primary-color); margin-left: 0.5rem;">Tu Elección</span>{% endif %}
+            </div>
+
+            <!-- Opción D -->
+            <div style="padding: 0.5rem 0.75rem; border-radius: var(--border-radius); border: 1px solid {% if item.clave_correcta == 'D' %}var(--success-color){% elif item.clave_marcada == 'D' and item.clave_correcta != 'D' %}#dc2626{% else %}var(--border-color){% endif %}; background: {% if item.clave_correcta == 'D' %}rgba(16, 185, 129, 0.08){% elif item.clave_marcada == 'D' and item.clave_correcta != 'D' %}rgba(239, 68, 68, 0.08){% else %}transparent{% endif %};">
+                <strong>D)</strong> {{ item.alternativa_d }}
+                {% if item.clave_correcta == 'D' %}<span class="badge badge-success" style="margin-left: 0.5rem;">Respuesta Correcta</span>{% endif %}
+                {% if item.clave_marcada == 'D' %}<span class="badge" style="background: rgba(30, 58, 138, 0.1); color: var(--primary-color); margin-left: 0.5rem;">Tu Elección</span>{% endif %}
+            </div>
+
+            {% if item.alternativa_e %}
+            <!-- Opción E -->
+            <div style="padding: 0.5rem 0.75rem; border-radius: var(--border-radius); border: 1px solid {% if item.clave_correcta == 'E' %}var(--success-color){% elif item.clave_marcada == 'E' and item.clave_correcta != 'E' %}#dc2626{% else %}var(--border-color){% endif %}; background: {% if item.clave_correcta == 'E' %}rgba(16, 185, 129, 0.08){% elif item.clave_marcada == 'E' and item.clave_correcta != 'E' %}rgba(239, 68, 68, 0.08){% else %}transparent{% endif %};">
+                <strong>E)</strong> {{ item.alternativa_e }}
+                {% if item.clave_correcta == 'E' %}<span class="badge badge-success" style="margin-left: 0.5rem;">Respuesta Correcta</span>{% endif %}
+                {% if item.clave_marcada == 'E' %}<span class="badge" style="background: rgba(30, 58, 138, 0.1); color: var(--primary-color); margin-left: 0.5rem;">Tu Elección</span>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+    <a href="{% url 'listar_simulacros' %}" class="btn btn-primary">
+        Volver a Mis Simulacros
+    </a>
+</div>
+{% endblock %}

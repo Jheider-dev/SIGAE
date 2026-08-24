@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Alumno - {{ alumno.get_full_name }} - SIGAE{% endblock %}
+{% block nav_alumnos %}active{% endblock %}
+{% block header_title %}Edición de Datos del Alumno{% endblock %}
+{% block header_subtitle %}Actualiza información de contacto, área académica, ciclo matriculado y estado de cuenta{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 750px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+        <div>
+            <h3 style="color: var(--primary-color); margin: 0;">{{ alumno.get_full_name }}</h3>
+            <span style="color: var(--text-muted); font-size: 0.875rem;">
+                Usuario: <strong>{{ alumno.username }}</strong> | DNI: <strong>{{ alumno.dni }}</strong>
+            </span>
+        </div>
+        <div>
+            {% if alumno.is_active %}
+                <span class="badge badge-success">Activo</span>
+            {% else %}
+                <span class="badge badge-danger">Inactivo</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="POST" action="{% url 'editar_alumno' alumno.id %}">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="nombres" class="form-label">Nombres *</label>
+                <input type="text" name="nombres" id="nombres" class="form-control" value="{{ alumno.first_name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="apellidos" class="form-label">Apellidos *</label>
+                <input type="text" name="apellidos" id="apellidos" class="form-control" value="{{ alumno.last_name }}" required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="telefono" class="form-label">Teléfono / Celular</label>
+                <input type="text" name="telefono" id="telefono" class="form-control" value="{{ alumno.telefono|default:'' }}" placeholder="Ej: 954123456">
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">Correo Electrónico</label>
+                <input type="email" name="email" id="email" class="form-control" value="{{ alumno.email|default:'' }}" placeholder="ejemplo@correo.com">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="area_academica" class="form-label">Área Académica *</label>
+                <select name="area_academica" id="area_academica" class="form-control" style="background-color: #ffffff; height: 42px; width: 100%; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem 1rem;" required>
+                    {% for code, name in areas_choices %}
+                        <option value="{{ code }}" {% if alumno.area_academica == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="ciclo_id" class="form-label">Ciclo de Preparación Matriculado</label>
+                <select name="ciclo_id" id="ciclo_id" class="form-control" style="background-color: #ffffff; height: 42px; width: 100%; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 0.5rem 1rem;">
+                    <option value="">-- Sin Ciclo Asignado --</option>
+                    {% for ciclo in ciclos %}
+                        <option value="{{ ciclo.id }}" {% if matricula_actual and matricula_actual.ciclo_id == ciclo.id %}selected{% endif %}>
+                            {{ ciclo.nombre }} {% if not ciclo.activo %}(Finalizado/Inactivo){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="direccion" class="form-label">Dirección Domiciliaria</label>
+            <input type="text" name="direccion" id="direccion" class="form-control" value="{{ alumno.direccion|default:'' }}" placeholder="Ej: Av. Floral 123, Puno">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 2rem; background: #f8fafc; padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+            <label class="form-label" style="font-weight: 600; color: var(--text-color); margin-bottom: 0.5rem; display: block;">
+                Estado de la Cuenta
+            </label>
+            <label style="display: inline-flex; align-items: center; gap: 0.75rem; cursor: pointer; user-select: none;">
+                <input type="checkbox" name="is_active" value="1" {% if alumno.is_active %}checked{% endif %} style="width: 1.25rem; height: 1.25rem; accent-color: var(--primary-color);">
+                <span style="font-size: 0.95rem; font-weight: 500;">
+                    Alumno Activo en el Sistema (permite acceso, rendición de simulacros y asistencia QR)
+                </span>
+            </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <a href="{% url 'listar_alumnos' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

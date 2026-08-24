@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Ciclos Académicos - SIGAE{% endblock %}
+{% block nav_ciclos_admin %}active{% endblock %}
+{% block nav_ciclos %}active{% endblock %}
+{% block header_title %}Gestión de Ciclos Académicos{% endblock %}
+{% block header_subtitle %}Listado y configuración de ciclos de preparación en la Academia Euler{% endblock %}
+
+{% block content %}
+<!-- Formulario de Registro de Nuevo Ciclo -->
+<div id="nuevo-ciclo-form" class="card" style="display: none; margin-bottom: 1.5rem; border-left: 4px solid var(--primary-color);">
+    <h3 style="color: #0f172a; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; font-size: 1.05rem; font-weight: 700;">
+        Registrar Nuevo Ciclo Académico
+    </h3>
+    <form method="POST" action="{% url 'listar_ciclos' %}">
+        {% csrf_token %}
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="nombre" class="form-label">Nombre del Ciclo *</label>
+                <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej. Ordinario 2026-I, Intensivo 2026" required>
+            </div>
+            <div class="form-group">
+                <label for="descripcion" class="form-label">Descripción</label>
+                <input type="text" name="descripcion" id="descripcion" class="form-control" placeholder="Ej. Dirigido a postulantes de todas las áreas">
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="fecha_inicio" class="form-label">Fecha de Inicio *</label>
+                <input type="date" name="fecha_inicio" id="fecha_inicio" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="fecha_fin" class="form-label">Fecha de Fin *</label>
+                <input type="date" name="fecha_fin" id="fecha_fin" class="form-control" required>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+            <button type="button" class="btn btn-secondary" onclick="toggleForm()">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar Ciclo</button>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="color: #0f172a; margin: 0; font-size: 1.05rem; font-weight: 700;">Ciclos de Preparación</h3>
+        <button class="btn btn-primary" onclick="toggleForm()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Registrar Nuevo Ciclo
+        </button>
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nombre del Ciclo</th>
+                    <th>Fecha de Inicio</th>
+                    <th>Fecha de Fin</th>
+                    <th>Estado</th>
+                    <th>Descripción</th>
+                    <th style="text-align: right;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ciclo in ciclos %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--primary-color);">{{ ciclo.nombre }}</td>
+                    <td>{{ ciclo.fecha_inicio|date:"d/m/Y" }}</td>
+                    <td>{{ ciclo.fecha_fin|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if ciclo.activo %}
+                            <span class="badge badge-success">Activo</span>
+                        {% else %}
+                            <span class="badge badge-danger">Finalizado</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ciclo.descripcion|default:"-" }}</td>
+                    <td style="text-align: right;">
+                        <div style="display: inline-flex; gap: 0.35rem; justify-content: flex-end; flex-wrap: wrap;">
+                            <a href="{% url 'gestionar_alumnos_ciclo' ciclo.id %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="Ver y matricular alumnos">
+                                Alumnos
+                            </a>
+                            <a href="{% url 'editar_ciclo' ciclo.id %}" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="Editar información del ciclo">
+                                Editar
+                            </a>
+                            <form method="POST" action="{% url 'cambiar_estado_ciclo' ciclo.id %}" style="margin: 0; display: inline;">
+                                {% csrf_token %}
+                                {% if ciclo.activo %}
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" onclick="return confirm('¿Finalizar el ciclo {{ ciclo.nombre }}?')" title="Finalizar ciclo">
+                                        Finalizar
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-success" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;" title="Reactivar ciclo">
+                                        Activar
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No hay ciclos registrados en el sistema.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function toggleForm() {
+        const formDiv = document.getElementById('nuevo-ciclo-form');
+        if (formDiv.style.display === 'none') {
+            formDiv.style.display = 'block';
+            formDiv.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            formDiv.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

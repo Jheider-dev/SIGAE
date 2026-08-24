@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel de Dirección - SIGAE{% endblock %}
+{% block nav_dashboard_admin %}active{% endblock %}
+{% block header_title %}Panel de Dirección y Administración General{% endblock %}
+{% block header_subtitle %}Monitoreo integral, gestión académica, financiera y plana docente{% endblock %}
+
+{% block content %}
+<!-- Tarjetas de Resumen Métrico (4 Cajas Blancas Distribuidas en Fila Horizontal) -->
+<div class="kpi-grid grid-cols-4">
+    <!-- Métrica 1: Alumnos Activos -->
+    <div class="card" style="border-left: 5px solid var(--primary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Alumnos Activos
+            </span>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color); line-height: 1.1;">
+                {{ total_alumnos_activos }}
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Matriculados en el ciclo actual
+        </div>
+    </div>
+
+    <!-- Métrica 2: Plana Docente Activa -->
+    <div class="card" style="border-left: 5px solid var(--secondary-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Docentes Activos
+            </span>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--secondary-color); line-height: 1.1;">
+                {{ total_docentes_activos }}
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            Plana docente registrada
+        </div>
+    </div>
+
+    <!-- Métrica 3: Asistencia del Día -->
+    <div class="card" style="border-left: 5px solid var(--success-color); display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Asistencia del Día
+            </span>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--success-color); line-height: 1.1;">
+                {{ porcentaje_asistencia_hoy }}%
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            {{ asistencias_hoy_alumnos }} ingresos validados hoy
+        </div>
+    </div>
+
+    <!-- Métrica 4: Planilla Docente Estimada -->
+    <div class="card" style="border-left: 5px solid #dc2626; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0; padding: 1.25rem; min-width: 0;">
+        <div>
+            <span style="font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.35rem; letter-spacing: 0.5px;">
+                Planilla Estimada ({{ mes_nombre }})
+            </span>
+            <div style="font-size: 1.85rem; font-weight: 700; color: #dc2626; line-height: 1.1;">
+                S/. {{ total_planilla_mes|floatformat:2 }}
+            </div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.8125rem; color: var(--text-muted);">
+            {{ total_horas_dictadas_mes }} horas acumuladas
+        </div>
+    </div>
+</div>
+
+<!-- Accesos Directos de Gestión -->
+<div class="card" style="margin-bottom: 2rem;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.25rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Accesos Directos de Gestión y Reportes
+    </h3>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a href="{% url 'control_pagos' %}" class="btn" style="background: rgba(16, 185, 129, 0.15); color: var(--success-color); font-weight: 600;">
+            Control de Pagos
+        </a>
+        <a href="{% url 'listar_docentes' %}" class="btn btn-primary">
+            Plana Docente
+        </a>
+        <a href="{% url 'ver_liquidacion_docentes' %}" class="btn" style="background: #dc2626; color: #ffffff;">
+            Liquidación Docente
+        </a>
+        <a href="{% url 'listar_alumnos' %}" class="btn btn-secondary">
+            Padrón de Alumnos
+        </a>
+        <a href="{% url 'listar_ciclos' %}" class="btn" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color);">
+            Gestión de Ciclos
+        </a>
+        <a href="{% url 'listar_simulacros_admin' %}" class="btn" style="background: rgba(217, 119, 6, 0.1); color: var(--secondary-color);">
+            Banco de Simulacros
+        </a>
+        <a href="{% url 'control_asistencia' %}" class="btn" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
+            Monitoreo Asistencia QR
+        </a>
+    </div>
+</div>
+
+<!-- Grilla de Tablas: Simulacros y Últimos Ingresos -->
+<div class="grid grid-cols-2">
+    <!-- Simulacros Recientes -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+            <h3 style="color: var(--primary-color); margin: 0;">Simulacros y Evaluaciones</h3>
+            <a href="{% url 'listar_simulacros_admin' %}" style="font-size: 0.8125rem; color: var(--primary-color); font-weight: 600; text-decoration: none;">Ver todos</a>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Simulacro</th>
+                        <th>Fecha</th>
+                        <th>Área</th>
+                        <th style="text-align: right;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sim in simulacros_recientes %}
+                    <tr>
+                        <td style="font-weight: 600; color: var(--primary-color);">{{ sim.titulo }}</td>
+                        <td>{{ sim.fecha|date:"d/m/Y" }}</td>
+                        <td><span class="badge" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color); font-size: 0.75rem;">{{ sim.get_area_academica_display }}</span></td>
+                        <td style="text-align: right;">
+                            <a href="{% url 'ver_ranking_html' sim.id %}" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                                Ranking
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                            No hay simulacros registrados recientemente.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Monitoreo de Asistencias Recientes -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+            <h3 style="color: var(--primary-color); margin: 0;">Últimos Ingresos Registrados</h3>
+            <a href="{% url 'control_asistencia' %}" style="font-size: 0.8125rem; color: var(--primary-color); font-weight: 600; text-decoration: none;">Panel QR</a>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Persona</th>
+                        <th>Rol / Área</th>
+                        <th>Hora</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asis in ultimas_asistencias_al %}
+                    <tr>
+                        <td style="font-weight: 600; color: var(--primary-color);">{{ asis.alumno.get_full_name|default:asis.alumno.username }}</td>
+                        <td><span class="badge" style="background: rgba(30, 58, 138, 0.08); color: var(--primary-color); font-size: 0.75rem;">Alumno - {{ asis.alumno.get_area_academica_display|default:"General" }}</span></td>
+                        <td>{{ asis.hora_acceso|time:"H:i:s" }}</td>
+                        <td><span class="badge badge-success" style="font-size: 0.75rem;">Presente</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                            No hay registros de asistencia el día de hoy.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

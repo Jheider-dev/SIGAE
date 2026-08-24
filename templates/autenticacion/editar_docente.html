@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Docente - SIGAE{% endblock %}
+{% block nav_docentes %}{% endblock %}
+{% block header_title %}Editar Información del Docente{% endblock %}
+{% block header_subtitle %}Actualiza los datos personales, curso asignado y tarifa por hora del profesor{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 750px; margin: 0 auto;">
+    <h3 style="color: var(--primary-color); margin-bottom: 1.5rem; border-bottom: 2px solid var(--secondary-color); padding-bottom: 0.5rem;">
+        Formulario de Edición: {{ docente.get_full_name }}
+    </h3>
+    
+    <form method="POST" action="{% url 'editar_docente' docente.id %}">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="nombres" class="form-label">Nombres *</label>
+                <input type="text" name="nombres" id="nombres" class="form-control" value="{{ docente.first_name }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="apellidos" class="form-label">Apellidos *</label>
+                <input type="text" name="apellidos" id="apellidos" class="form-control" value="{{ docente.last_name }}" required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="dni" class="form-label">DNI</label>
+                <input type="text" id="dni" class="form-control" value="{{ docente.dni }}" disabled style="background-color: #f1f5f9; cursor: not-allowed;">
+                <small style="color: var(--text-muted); font-size: 0.75rem;">El DNI es el identificador único del usuario.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="curso_asignado" class="form-label">Curso Asignado *</label>
+                <input type="text" name="curso_asignado" id="curso_asignado" class="form-control" value="{{ docente.curso_asignado|default:'' }}" placeholder="Ej. Álgebra, Razonamiento Matemático..." required>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="precio_hora" class="form-label">Tarifa / Precio por Hora (S/.) *</label>
+                <input type="number" step="0.50" min="0" name="precio_hora" id="precio_hora" class="form-control" value="{{ docente.precio_hora|default:'0.00' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="ciclo" class="form-label">Ciclo Académico</label>
+                <select name="ciclo" id="ciclo" class="form-control" style="background-color: #ffffff;">
+                    <option value="">-- Sin Ciclo Específico (General) --</option>
+                    {% for c in ciclos %}
+                    <option value="{{ c.id }}" {% if docente.ciclo_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2">
+            <div class="form-group">
+                <label for="telefono" class="form-label">Teléfono de Contacto</label>
+                <input type="text" name="telefono" id="telefono" class="form-control" value="{{ docente.telefono|default:'' }}" placeholder="Ej. 951234567">
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">Correo Electrónico</label>
+                <input type="email" name="email" id="email" class="form-control" value="{{ docente.email|default:'' }}" placeholder="correo@ejemplo.com">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="direccion" class="form-label">Dirección</label>
+            <input type="text" name="direccion" id="direccion" class="form-control" value="{{ docente.direccion|default:'' }}" placeholder="Dirección de residencia">
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem; background: rgba(30, 58, 138, 0.04); padding: 1rem; border-radius: var(--border-radius); border: 1px solid var(--border-color);">
+            <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-weight: 600; color: var(--primary-color);">
+                <input type="checkbox" name="is_active" value="1" {% if docente.is_active %}checked{% endif %} style="width: 18px; height: 18px; accent-color: var(--primary-color);">
+                Docente Activo en el Sistema (Habilitado para dictar clases y registrar asistencias)
+            </label>
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+            <a href="{% url 'listar_docentes' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                Guardar Cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
