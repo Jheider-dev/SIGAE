@@ -6,20 +6,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SIGAE - Academia Euler{% endblock %}</title>
     <!-- Hoja de Estilos Personalizada -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2.2">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2.3">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
     {% block body_wrapper %}
     <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <!-- Barra Superior Móvil con Botón Hamburguesa (3 Líneas) -->
+        <header class="mobile-navbar">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="logo-text" style="font-size: 1.25rem;">SIGAE</span>
+                <span class="logo-subtext" style="font-size: 0.65rem; margin-top: 0;">Euler</span>
+            </div>
+            <button type="button" id="hamburger-btn" class="hamburger-btn" aria-label="Abrir Menú de Navegación">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </header>
+
+        <!-- Fondo Oscuro de Cierre (Backdrop Overlay) -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Sidebar Navigation (Drawer Desplegable en Móvil / Fijo en Desktop) -->
+        <aside class="sidebar" id="app-sidebar">
             <div class="logo-container">
-                <span class="logo-text">SIGAE</span>
-                <span class="logo-subtext">Academia Euler</span>
+                <div>
+                    <span class="logo-text">SIGAE</span>
+                    <span class="logo-subtext">Academia Euler</span>
+                </div>
+                <button type="button" id="sidebar-close-btn" class="sidebar-close-btn" aria-label="Cerrar Menú">✕</button>
             </div>
             
-            <nav style="flex-grow: 1;">
+            <nav style="flex-grow: 1; overflow-y: auto;">
                 <ul class="nav-links">
                     {% if user.is_authenticated %}
                         <!-- Enlaces por Rol -->
@@ -136,6 +155,45 @@
             </section>
         </main>
     </div>
+
+    <!-- Script del Menú Desplegable Móvil (3 Líneas) -->
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const hamburgerBtn = document.getElementById("hamburger-btn");
+        const sidebarCloseBtn = document.getElementById("sidebar-close-btn");
+        const sidebar = document.getElementById("app-sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
+        const navLinks = document.querySelectorAll(".sidebar .nav-link");
+
+        function openMenu() {
+            if (sidebar && overlay) {
+                sidebar.classList.add("open");
+                overlay.classList.add("active");
+                document.body.style.overflow = "hidden";
+            }
+        }
+
+        function closeMenu() {
+            if (sidebar && overlay) {
+                sidebar.classList.remove("open");
+                overlay.classList.remove("active");
+                document.body.style.overflow = "";
+            }
+        }
+
+        if (hamburgerBtn) hamburgerBtn.addEventListener("click", openMenu);
+        if (sidebarCloseBtn) sidebarCloseBtn.addEventListener("click", closeMenu);
+        if (overlay) overlay.addEventListener("click", closeMenu);
+
+        navLinks.forEach(function(link) {
+            link.addEventListener("click", function() {
+                if (window.innerWidth <= 768) {
+                    closeMenu();
+                }
+            });
+        });
+    });
+    </script>
     {% endblock %}
 </body>
 </html>

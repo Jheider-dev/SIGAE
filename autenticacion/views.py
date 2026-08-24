@@ -22,7 +22,7 @@ def iniciar_sesion(request):
     from sigae.utils import log_evento_auditoria
 
     if request.user.is_authenticated:
-        return redirigir_segun_rol(request.user)
+        return redirigir_segun_rol(request.user, request)
 
     if request.method == 'POST':
         usuario_str = request.POST.get('username', '').strip()
@@ -33,7 +33,7 @@ def iniciar_sesion(request):
         if usuario is not None:
             login(request, usuario)
             log_evento_auditoria('LOGIN_EXITOSO', f"Inicio de sesión exitoso para el rol {usuario.rol}.", request)
-            return redirigir_segun_rol(usuario)
+            return redirigir_segun_rol(usuario, request)
         else:
             messages.error(request, "Usuario o contraseña incorrectos.")
             log_evento_auditoria('LOGIN_FALLIDO', f"Intento de ingreso fallido para el username: '{usuario_str}'.", request)
@@ -53,23 +53,44 @@ def cerrar_sesion(request):
     return redirect('iniciar_sesion')
 
 
-def redirigir_segun_rol(usuario):
+def redirigir_segun_rol(usuario, request=None):
     """
-    Helper para redirigir a los usuarios al panel adecuado según su rol.
+    Helper para redirigir a los usuarios al panel adecuado según su rol y tipo de dispositivo.
+
+    En teléfonos/dispositivos móviles:
+    - ALUMNO -> Mi Credencial QR (/perfil/)
+    - DOCENTE -> Mi Credencial QR (/perfil/)
+    - SECRETARIA -> Panel Asistencia QR (/academico/asistencia/)
+    - ADMIN -> Dashboard (/dashboard/admin/)
+
+    En computadoras de escritorio/laptops:
+    - Redirige a los dashboards principales respectivos.
 
     Args:
         usuario (Usuario): Instancia del usuario autenticado.
+        request (HttpRequest, optional): Objeto HttpRequest para detección de User-Agent.
 
     Returns:
-        HttpResponseRedirect: Redirección al dashboard asignado.
+        HttpResponseRedirect: Redirección al panel o credencial asignada.
     """
+    is_mobile = False
+    if request:
+        user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+        is_mobile = any(k in user_agent for k in ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'webos', 'blackberry', 'iemobile', 'opera mini'])
+
     if usuario.rol == 'ADMIN' or usuario.is_superuser or usuario.is_staff:
         return redirect('dashboard_admin')
     elif usuario.rol == 'ALUMNO':
+        if is_mobile:
+            return redirect('perfil_alumno')
         return redirect('dashboard_alumno')
     elif usuario.rol == 'DOCENTE':
+        if is_mobile:
+            return redirect('perfil_alumno')
         return redirect('dashboard_docente')
     elif usuario.rol == 'SECRETARIA':
+        if is_mobile:
+            return redirect('control_asistencia')
         return redirect('dashboard_secretaria')
     else:
         # En caso de no tener rol, enviar a login
