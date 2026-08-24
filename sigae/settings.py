@@ -190,45 +190,67 @@ AUTH_USER_MODEL = 'autenticacion.Usuario'
 
 # Configuración de Logging y Auditoría de Seguridad
 # ------------------------------------------------------------------------------
-import platform
-
-LOG_DIR = '/var/log/sigae'
-if platform.system() == 'Windows':
+if os.environ.get('VERCEL'):
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '[{asctime}] [{levelname}] {message}',
+                'style': '{',
+            },
+        },
+        'handlers': {
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
+        },
+        'loggers': {
+            'sigae.audit': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+        },
+    }
+else:
     LOG_DIR = os.path.join(BASE_DIR, 'var', 'log', 'sigae')
-
-try:
-    os.makedirs(LOG_DIR, exist_ok=True)
-    LOG_FILE = os.path.join(LOG_DIR, 'audit.log')
-    with open(LOG_FILE, 'a') as f:
-        pass
-except Exception:
-    LOG_DIR = os.path.join(BASE_DIR, 'var', 'log', 'sigae')
-    os.makedirs(LOG_DIR, exist_ok=True)
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+    except Exception:
+        LOG_DIR = '/tmp'
     LOG_FILE = os.path.join(LOG_DIR, 'audit.log')
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '[{asctime}] [{levelname}] {message}',
-            'style': '{',
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '[{asctime}] [{levelname}] {message}',
+                'style': '{',
+            },
         },
-    },
-    'handlers': {
-        'audit_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': LOG_FILE,
-            'formatter': 'verbose',
-            'encoding': 'utf-8',
+        'handlers': {
+            'audit_file': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'filename': LOG_FILE,
+                'formatter': 'verbose',
+                'encoding': 'utf-8',
+            },
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
         },
-    },
-    'loggers': {
-        'sigae.audit': {
-            'handlers': ['audit_file'],
-            'level': 'INFO',
-            'propagate': False,
+        'loggers': {
+            'sigae.audit': {
+                'handlers': ['audit_file', 'console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
         },
-    },
-}
+    }
