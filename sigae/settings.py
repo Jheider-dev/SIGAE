@@ -95,10 +95,21 @@ if DATABASE_URL:
     try:
         import dj_database_url
         DATABASES = {
-            'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+            'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
         }
-    except ImportError:
-        pass
+    except Exception:
+        import urllib.parse as urlparse
+        url = urlparse.urlparse(DATABASE_URL)
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'NAME': url.path[1:] if url.path else 'postgres',
+                'USER': url.username or 'postgres',
+                'PASSWORD': url.password or '',
+                'HOST': url.hostname,
+                'PORT': str(url.port or 5432),
+            }
+        }
 elif os.environ.get('DB_HOST') and os.environ.get('DB_HOST') != 'localhost':
     DATABASES = {
         'default': {
