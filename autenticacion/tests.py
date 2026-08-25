@@ -194,8 +194,8 @@ class PlantillaCSVTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'text/csv; charset=utf-8')
         self.assertIn('attachment; filename="plantilla_alumnos_sigae.csv"', response['Content-Disposition'])
-        content = response.content.decode('utf-8')
-        self.assertIn('Nombres,Apellidos,DNI,Area_Academica', content)
+        content = response.content.decode('utf-8-sig')
+        self.assertIn('Nombres,Apellidos,DNI,Área Académica', content)
         self.assertIn('INGENIERIAS', content)
 
 

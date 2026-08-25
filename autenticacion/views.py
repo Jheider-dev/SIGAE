@@ -448,7 +448,16 @@ def registrar_alumno_masivo(request):
             nombres = fila[0].strip()
             apellidos = fila[1].strip()
             dni = fila[2].strip()
-            area_academica = fila[3].strip().upper()
+            raw_area = fila[3].strip().upper()
+            area_clean = raw_area.replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U')
+            if area_clean.startswith('INGENIERI'):
+                area_academica = 'INGENIERIAS'
+            elif area_clean.startswith('BIOMEDIC'):
+                area_academica = 'BIOMEDICAS'
+            elif area_clean.startswith('SOCIAL'):
+                area_academica = 'SOCIALES'
+            else:
+                area_academica = area_clean
             
             telefono = fila[4].strip() if len(fila) > 4 else ''
             direccion = fila[5].strip() if len(fila) > 5 else ''
@@ -459,7 +468,7 @@ def registrar_alumno_masivo(request):
                 continue
 
             if area_academica not in ['INGENIERIAS', 'BIOMEDICAS', 'SOCIALES']:
-                errores.append(f"Fila {idx}: Área académica '{area_academica}' inválida.")
+                errores.append(f"Fila {idx}: Área académica '{raw_area}' inválida (debe ser INGENIERIAS, BIOMEDICAS o SOCIALES).")
                 continue
 
             if len(dni) != 8 or not dni.isdigit():
@@ -489,7 +498,7 @@ def registrar_alumno_masivo(request):
                 errores.append(f"Fila {idx}: Error: {str(e)}")
 
         if registrados > 0:
-            messages.success(request, f"¡Se registraron {registrados} alumnos de golpe exitosamente!")
+            messages.success(request, f"¡Se registraron {registrados} alumnos exitosamente!")
         if errores:
             if len(errores) > 5:
                 messages.warning(request, f"Hubo problemas en algunas filas: {', '.join(errores[:5])} y {len(errores)-5} más.")
@@ -517,11 +526,11 @@ def descargar_plantilla_alumnos(request):
     # Escribir BOM UTF-8 para compatibilidad perfecta con Microsoft Excel
     response.write('\ufeff')
     
-    writer = csv.writer(response)
-    writer.writerow(['Nombres', 'Apellidos', 'DNI', 'Area_Academica', 'Telefono', 'Direccion', 'Email'])
-    writer.writerow(['Juan Carlos', 'Perez Quispe', '71234567', 'INGENIERIAS', '951234567', 'Av. Floral 123, Puno', 'juan.perez@ejemplo.com'])
-    writer.writerow(['Maria Elena', 'Luna Gomez', '72345678', 'BIOMEDICAS', '952345678', 'Jr. Puno 456, Juliaca', 'maria.luna@ejemplo.com'])
-    writer.writerow(['Carlos Alberto', 'Condori Ramos', '73456789', 'SOCIALES', '953456789', 'Av. El Sol 789, Puno', 'carlos.condori@ejemplo.com'])
+    writer = csv.writer(response, delimiter=',')
+    writer.writerow(['Nombres', 'Apellidos', 'DNI', 'Área Académica', 'Teléfono (opcional)', 'Dirección (opcional)', 'Correo (opcional)'])
+    writer.writerow(['Juan', 'Perez Gomez', '12345678', 'INGENIERIAS', '951987654', 'Av Floral 123', 'juan@mail.com'])
+    writer.writerow(['Maria', 'Luna Lopez', '87654321', 'BIOMEDICAS', '952345678', 'Jr Puno 456', 'maria@mail.com'])
+    writer.writerow(['Carlos', 'Condori Ramos', '45678912', 'SOCIALES', '953456789', 'Av El Sol 789', 'carlos@mail.com'])
     
     return response
 
@@ -630,42 +639,22 @@ def exportar_alumnos_csv(request):
     response['Content-Disposition'] = f'attachment; filename="padron_alumnos_sigae_{fecha_str}.csv"'
     response.write('\ufeff')  # BOM para apertura directa en Excel con tildes y caracteres especiales
 
-    writer = csv.writer(response, delimiter=';')
+    writer = csv.writer(response, delimiter=',')
     writer.writerow([
-        'ID', 'DNI', 'Apellidos', 'Nombres', 'Usuario', 'Area Academica',
-        'Ciclo Matriculado', 'Estado Cuenta', 'Estado Pensiones', 'Telefono', 'Email', 'Direccion'
+        'Nombres', 'Apellidos', 'DNI', 'Área Académica',
+        'Teléfono (opcional)', 'Dirección (opcional)', 'Correo (opcional)'
     ])
-
-    matriculas_activas = {
-        m.alumno_id: m.ciclo.nombre
-        for m in Matricula.objects.filter(activo=True).select_related('ciclo')
-    }
-
-    pagos_pendientes_set = set(Pago.objects.filter(estado='PENDIENTE').values_list('alumno_id', flat=True))
-    pagos_realizados_set = set(Pago.objects.filter(estado='PAGADO').values_list('alumno_id', flat=True))
 
     alumnos = Usuario.objects.filter(rol=Usuario.ROL_ALUMNO).order_by('last_name', 'first_name')
     for al in alumnos:
-        if al.id in pagos_pendientes_set:
-            estado_pago = 'Pension Pendiente'
-        elif al.id in pagos_realizados_set:
-            estado_pago = 'Al dia'
-        else:
-            estado_pago = 'Pension Pendiente'
-
         writer.writerow([
-            al.id,
-            al.dni or '',
-            al.last_name or '',
             al.first_name or '',
-            al.username,
-            al.get_area_academica_display() or 'No asignada',
-            matriculas_activas.get(al.id, 'Sin Matricula Activa'),
-            'Activo' if al.is_active else 'Inactivo',
-            estado_pago,
+            al.last_name or '',
+            al.dni or '',
+            al.area_academica or '',
             al.telefono or '',
-            al.email or '',
-            al.direccion or ''
+            al.direccion or '',
+            al.email or ''
         ])
 
     return response
