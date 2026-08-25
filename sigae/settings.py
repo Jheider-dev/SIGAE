@@ -191,7 +191,7 @@ USE_TZ = True
 # Archivos Estáticos (CSS, JavaScript, Images)
 # ------------------------------------------------------------------------------
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 WHITENOISE_USE_FINDERS = True
