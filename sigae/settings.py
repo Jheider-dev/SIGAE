@@ -59,11 +59,38 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Configuración de Proxy Inverso y SSL (requerido para Vercel y entornos en la nube)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
+# Orígenes confiables para CSRF
 CSRF_TRUSTED_ORIGINS = [
     'https://*.vercel.app',
+    'https://*.now.sh',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
+
+# Agregar automáticamente URLs generadas por Vercel si existen
+if os.environ.get('VERCEL_URL'):
+    CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ.get('VERCEL_URL')}")
+if os.environ.get('VERCEL_PROJECT_PRODUCTION_URL'):
+    CSRF_TRUSTED_ORIGINS.append(f"https://{os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')}")
+
+# Soporte para orígenes personalizados desde variables de entorno
+custom_csrf_origins = os.environ.get('CSRF_TRUSTED_ORIGINS')
+if custom_csrf_origins:
+    CSRF_TRUSTED_ORIGINS.extend([
+        origin.strip() for origin in custom_csrf_origins.split(',') if origin.strip()
+    ])
+
+# Configuración de Cookies para producción / Vercel
+if not DEBUG or os.environ.get('VERCEL'):
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
 ROOT_URLCONF = 'sigae.urls'
 
